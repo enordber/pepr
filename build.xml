@@ -1,0 +1,66 @@
+<project name="PEPR" default="dist" basedir=".">
+    <description>
+        simple example build file
+    </description>
+  <!-- set global properties for this build -->
+  <property name="src" location="src"/>
+  <property name="build" location="build"/>
+  <property name="dist"  location="dist"/>
+  <property name="bin"  location="pepr-bin"/>
+  <property name="lib"  location="lib"/>
+  <property name="scripts"  location="scripts"/>
+  
+  <!-- define path structures: project.classpath and war.lib -->
+  <path id="project.classpath">
+          <fileset dir="lib" includes="*.jar" />
+  </path>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init"
+        description="compile the source " >
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${src}" classpathref="project.classpath" destdir="${build}"/>
+  </target>
+
+  <target name="dist" depends="compile"
+        description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}/pepr/lib"/>
+
+    <!-- Put everything in ${build} into the pepr.jar file -->
+    <jar jarfile="${dist}/pepr/lib/pepr.jar" basedir="${build}"/>
+
+  	<!-- copy everything to dist directory for tar -->
+    <copy todir="${dist}/pepr/bin_mac">
+      <fileset dir="${bin}_mac"/>
+    </copy>
+    
+    <copy todir="${dist}/pepr/bin">
+      <fileset dir="${bin}_linux"/>
+    </copy>
+    
+    <copy todir="${dist}/pepr/lib">
+      <fileset dir="${lib}"/>
+    </copy>
+    
+    <copy todir="${dist}/pepr/scripts">
+      <fileset dir="${scripts}"/>
+    </copy>
+    
+    <tar compression="gzip" destfile="pepr-${DSTAMP}.tar" basedir="${dist}"/>
+    
+    </target>
+
+  <target name="clean"
+        description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+</project>
