@@ -1,3 +1,65 @@
 PEPR - Phylogenomic Estimation with Progressive Refinement
 
+PEPR uses several third-party tools, which are included with this distribution for the 
+convenience of the end user. PEPR has been tested with these specific versions of these
+tools. Other versions may be substituted, but there is no guarantee that PEPR will work
+properly with different versions. It is our best understanding that all of these
+programs are available under terms that allow them to be distributed in this manner.
+This document lists the third-party programs included, and the reasons we believe it is
+acceptable for them to be redistributed in this fashion. With the exception of
+FastTree, all third-party tools are unaltered. FastTree was modified, with assistance
+from its author, Morgan Price, in order to use the WAG likelihood matrix, rather than
+the default JTT matrix.
+
+
+
+FastTree
+        http://www.microbesonline.org/fasttree/ - “FastTree is open source software -- 
+        you are free to modify and redistribute it as you wish.”
+
+Gblocks
+        http://molevol.cmima.csic.es/castresana/Gblocks/Gblocks_documentation.html “The 
+        program is available free of charge for Mac OS X, Windows, Linux and some UNIX 
+        systems.
+
+        The software and its accompanying documentation are provided as is, without 
+        guarantee of support or maintenance.”
+
+        No restrictions on use or distribution are mentioned.
+
+blastall, formatdb
+        “Public Domain Notice” included with the software from NCBI. This notice 
+        includes the statements,
+        “This software/database is freely available to the public for use. The National 
+        Library of Medicine and the U.S. Government have not placed any restriction on 
+        its use or reproduction.”
+
+blat
+        README file with the blat source code says,
+        “All files are copyrighted, but license is hereby granted for personal, 
+        academic, and non-profit use. ”
+
+hmmbuild, hmmsearch
+        ftp://selab.janelia.org/pub/software/hmmer3/3.1b1/Userguide.pdf
+        “HMMER is licensed and freely distributed under the GNU General Public License 
+        version 3 (GPLv3). For a copy of the License, see 
+        http://www.gnu.org/licenses/.”
+
+mcl
+        http://micans.org/mcl/
+        “The software is licensed under the GNU General Public License, version 3.”
+        http://www.gnu.org/licenses/gpl.txt
+
+muscle
+        http://www.drive5.com/muscle/manual/license.html
+        “The MUSCLE software, including object and source code and documentation, is 
+        donated to the public domain. You may therefore freely copy it for any legal 
+        purpose you wish. Acknowledgement of authorship and citation in publications is
+        appreciated.”
+
+raxmlHPC, raxmlHPC-PTHREADS
+        https://github.com/stamatak/standard-RAxML/blob/master/manual/NewManual.pdf
+        “RAxML is open source under GNU GPL”
+
+
 
