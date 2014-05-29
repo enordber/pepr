@@ -68,6 +68,7 @@ public class ExecUtilities {
 		InputStream is = proc.getInputStream();
 		InputStream errStream = proc.getErrorStream();
 		BufferedReader reader = 
+<<<<<<< HEAD
 				new BufferedReader(new InputStreamReader(is));
 		BufferedReader errorReader = 
 				new BufferedReader(new InputStreamReader(errStream));
@@ -168,6 +169,101 @@ public class ExecUtilities {
 				if(stdout.length > 0) {
 					r = stdout[0];
 				}
+=======
+			new BufferedReader(new InputStreamReader(is));
+		BufferedReader errorReader = 
+			new BufferedReader(new InputStreamReader(errStream));
+
+		ReaderRunnable errorRead = new ReaderRunnable(errorReader);
+		Thread errorThread = new Thread(errorRead);
+		errorThread.start();
+
+		ReaderRunnable outReader = new ReaderRunnable(reader);
+		Thread outThread = new Thread(outReader);
+		outThread.start();
+
+		errorThread.join();
+		outThread.join();
+		r = new CommandResults(outReader.getLinesRead(),
+				errorRead.getLinesRead());
+
+		//call destroy() on process to free resources. The streams
+		//are not closed automatically, and may eventually 
+		//accumulate and result in an "IOException: Too many open files"
+		proc.waitFor();
+		try {
+			proc.getErrorStream().close();
+			proc.getInputStream().close();
+			proc.getOutputStream().close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		proc.destroy();
+
+		return r;
+
+	}
+	/**
+	 * This is a Runnable to monitor and capture the
+	 *  output from a command.
+	 * 
+	 * @author enordber
+	 *
+	 */
+	private static class ReaderRunnable implements Runnable {
+		private boolean debug = false;
+		private BufferedReader reader;
+		private ArrayList<String> linesRead;
+
+		public ReaderRunnable(BufferedReader reader) {
+			this.reader = reader;
+			linesRead = new ArrayList<String>();
+		}
+		public void run() {
+			String line;
+			try {
+				while((line = reader.readLine()) != null) {
+					linesRead.add(line);
+					if(debug) {
+						System.out.println(line);
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		/**
+		 * Returns an array of all lines read from the reader.
+		 * @return
+		 */
+		public String[] getLinesRead(){
+			String[] r = new String[linesRead.size()];
+			linesRead.toArray(r);
+			return r;
+		}
+
+
+	}
+
+	/**
+	 * Returns the absolute path to the given executable. This method
+	 * relies on the 'which' utility. Therefore, it only works on
+	 * Unix-type systems that have 'which' at /usr/bin/which. 
+	 */
+	public static String getCommandPath(String cmd) {
+		String r = null;
+		//use 'which' utility to look for command path
+		String whichCmd = "/usr/bin/which " + cmd;
+		CommandResults whichRes= ExecUtilities.exec(whichCmd);
+
+		if(whichRes == null) {
+			logger.info("unable to get command path for '" + cmd + "'");
+		} else {
+			String[] stdout = whichRes.getStdout();
+			if(stdout.length > 0) {
+				r = stdout[0];
+>>>>>>> refs/remotes/origin/master
 			}
 		}
 		return r;

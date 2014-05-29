@@ -7,8 +7,16 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
+<<<<<<< HEAD
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+=======
+import javax.media.j3d.NodeReferenceTable;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import com.sun.org.apache.xerces.internal.dom.ChildNode;
+>>>>>>> refs/remotes/origin/master
 
 import edu.vt.vbi.ci.util.ExtendedBitSet;
 import edu.vt.vbi.ci.util.IntList;

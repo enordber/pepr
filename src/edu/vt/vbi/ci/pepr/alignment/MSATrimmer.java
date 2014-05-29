@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
+<<<<<<< HEAD
 
 /**
  * Trims a SequenceAlignment. The actual trimming method 
@@ -104,6 +105,107 @@ public class MSATrimmer {
 			System.out.println("MSATrimmer.trimWithGblocks() " + gblocksCommand);
 		}
 		ExecUtilities.exec(gblocksCommand);
+=======
+import edu.vt.vbi.ci.util.RemoteHost;
+
+/**
+ * Trims a SequenceAlignment. The actual trimming method 
+ * has not bee determined yet. For initial implementation, 
+ * a dummy trim() method will be implemented that simply
+ * returns the SequenceAlignment unaltered.
+ * 
+ * @author enordber
+ *
+ */
+public class MSATrimmer {
+
+	private boolean debug = false;
+
+	private double portionOfSequencesForConservedSite = 0.8;
+
+	private File workingDir;
+	private RemoteHost host = RemoteHost.getLocalHost();
+
+	private boolean keepFiles = false;
+
+	public MSATrimmer() {
+		//check for debug System property
+		String debugProp = System.getProperty(HandyConstants.DEBUG);
+		if(debugProp != null && debugProp.equals(HandyConstants.TRUE)) {
+			debug = true;
+		}
+	}
+	/**
+	 * @param alignment
+	 * @return
+	 */
+	public SequenceAlignment trim(SequenceAlignment alignment) {
+		SequenceAlignment r = null;
+
+		try {
+			r = trimWithGBlocks(alignment);
+			r.setName(alignment.getName() + "_trim");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		}
+		return r;
+	}
+
+	/**
+	 * Uses GBlocks to trim the alignment.
+	 * 
+	 * @param alignment
+	 * @return
+	 * @throws IOException 
+	 */
+	private SequenceAlignment trimWithGBlocks(SequenceAlignment alignment) 
+	throws IOException {
+		SequenceAlignment r = null;
+		//write the alignment to a file, in a format that GBlocks
+		//accepts as input. Replace sequence titles with index numbers for
+		//the Gblocks input file. These will be replaced with the full 
+		//title again after the alignment is trimmed.
+		int sequenceCount = alignment.getNTax();
+		if(debug) {
+			System.out.println("MSATrimmer.trimWithGblocks() sequences in alignment: "
+					+ sequenceCount);
+		}
+		String alignmentFileName = getWorkingDir().getAbsolutePath()
+		+ System.getProperty("file.separator") + alignment.getName();
+		File gblocksInputFile = new File(alignmentFileName);
+		FileWriter fw = new FileWriter(gblocksInputFile);
+		String[] taxa = alignment.getTaxa();
+				
+		for(int i = 0; i < sequenceCount; i++) {
+			String seq = alignment.getSequenceString(i);
+			//Gblocks limits sequence titles to 73 characters (74, including the '>')
+			String taxon = taxa[i];
+			if(taxon.length() > 73) {
+				taxon = taxon.substring(0, 73);
+			}
+			fw.write(">" + taxon + "\n");
+			//			fw.write(">" + i + "\n");
+			fw.write(seq);
+			fw.write("\n");
+		}
+		fw.flush();
+		fw.close();
+
+		int b1ParamValue = 
+			(int)Math.ceil(taxa.length * portionOfSequencesForConservedSite);
+		String gblocksB1Param = "-b1=" + b1ParamValue;
+		String gblocksB3Param = "-b3=8";
+		String gblocksB5Param = "-b5=h";
+		//run GBlocks on the temporary alignment file
+		String gblocksCommand = host.getCommandPath("Gblocks") + 
+		" " + gblocksInputFile.getAbsolutePath() 
+		+ " -o " + gblocksB1Param + " " + gblocksB3Param + " " + gblocksB5Param;
+		if(debug) {
+			System.out.println("MSATrimmer.trimWithGblocks() " + gblocksCommand);
+		}
+		host.executeCommand(gblocksCommand);
+>>>>>>> refs/remotes/origin/master
 
 		//read results from GBlocks output file
 		String gblocksResultFileName = 
