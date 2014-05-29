@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
+
 import edu.vt.vbi.ci.pepr.alignment.AlignmentUtilities;
 import edu.vt.vbi.ci.pepr.alignment.ConcatenatedSequenceAlignment;
 import edu.vt.vbi.ci.pepr.alignment.MSAConcatenator;
@@ -28,7 +30,6 @@ import edu.vt.vbi.ci.pepr.tree.TreeSupportDecorator;
 import edu.vt.vbi.ci.util.CommandLineProperties;
 import edu.vt.vbi.ci.util.HandyConstants;
 import edu.vt.vbi.ci.util.RandomSetUtils;
-import edu.vt.vbi.ci.util.RemoteHost;
 import edu.vt.vbi.ci.util.file.FastaSequenceSet;
 import edu.vt.vbi.ci.util.file.FastaUtilities;
 import edu.vt.vbi.ci.util.file.SequenceSetProvider;
@@ -43,6 +44,7 @@ import edu.vt.vbi.ci.util.file.SequenceSetProvider;
 public class PhylogenomicPipeline2 {
 
 	private static HashMap commands;
+	private Logger logger = Logger.getLogger(getClass());
 
 	private CommandLineProperties commandLineProperties;
 
@@ -110,11 +112,6 @@ public class PhylogenomicPipeline2 {
 			printHelp();
 			System.exit(0);
 		}
-//		System.out.println("args:");
-//		String[] clpArgs = commandLineProperties.getArgs();
-//		for(int i = 0; i < clpArgs.length; i++) {
-//			System.out.println(clpArgs[i]);
-//		}
 
 		String availableMemory = commandLineProperties.getValues(HandyConstants.AVAILABLE_RAM, null)[0];
 		
@@ -710,7 +707,7 @@ public class PhylogenomicPipeline2 {
 				e.printStackTrace();
 			}
 		}
-		System.out.println("done aligning");
+		logger.info("done aligning");
 	}
 
 	/**
@@ -725,18 +722,15 @@ public class PhylogenomicPipeline2 {
 	 */
 	private SequenceAlignment getAlignment(FastaSequenceSet sequenceSet) {
 		SequenceAlignment r = null;
-//		System.out.println(">PhylogenomicPipeline2.getAlignment 1 " + Thread.currentThread().getName());
 
 		boolean reuseAlignments = false;
 		if(sequenceSetToAlignment == null) {
 			sequenceSetToAlignment = new HashMap();
 		}
-//		System.out.println("PhylogenomicPipeline2.getAlignment 2 " + Thread.currentThread().getName());
 
 		synchronized(sequenceSetToAlignment) {
 		    r = (SequenceAlignment) sequenceSetToAlignment.get(sequenceSet);
 		}
-//		System.out.println("PhylogenomicPipeline2.getAlignment 3 " + Thread.currentThread().getName());
 		if(r == null) {
 			//see if alignment file already exist. If it does, load the 
 			//alignment from the file. If not, use the multiple sequence aligner
@@ -747,18 +741,12 @@ public class PhylogenomicPipeline2 {
 					+ HandyConstants.ALIGNMENT_FILE_SUFFIX);
 
 			File alignmentFile = new File(alignmentFileName);
-//			System.out.println("PhylogenomicPipeline2.getAlignment 4 " + Thread.currentThread().getName());
 			if(reuseAlignments && alignmentFile.exists()) {
 				try {
 					r = SequenceAlignmentParser.
 					parseFastaAlignmentFile(alignmentFileName);
 					r.setName(sequenceSet.getName() + 
 							HandyConstants.ALIGNMENT_FILE_SUFFIX);
-					//the next two statements assume stable alignment,
-					//is this necessary?
-//					r.setTitles(sequenceSet.getTitles());
-	//				r.setTaxa(FastaUtilities.
-		//					getTaxaFromTitles(sequenceSet.getTitles()));
 				} catch (IOException e) {
 					e.printStackTrace();
 				} catch(ArithmeticException ae) {
@@ -767,12 +755,9 @@ public class PhylogenomicPipeline2 {
 				}
 			} else {
 				if(multipleSequenceAligner == null) {
-//					System.out.println("PhylogenomicPipeline2.getAlignment 5 " + Thread.currentThread().getName());
 					multipleSequenceAligner = new MultipleSequenceAligner();
 				}
-//				System.out.println("PhylogenomicPipeline2.getAlignment 6 " + Thread.currentThread().getName());
 				r = multipleSequenceAligner.getMSA(sequenceSet);
-//				System.out.println("PhylogenomicPipeline2.getAlignment 6.1 " + Thread.currentThread().getName());
 			}
 			if(r != null) {
 				if(isGblocksTrim()) {
@@ -780,11 +765,7 @@ public class PhylogenomicPipeline2 {
 						msaTrimmer = new MSATrimmer();
 					}
 					//trim alignment
-//					System.out.println("Alignment length before Gblocks trimming: "
-//							+ r.getLength());
 					r = msaTrimmer.trim(r);
-//					System.out.println("Alignment length after Gblocks trimming: "
-//							+ r.getLength());
 				}
 
 				if(isUniformTrim()) {
@@ -796,14 +777,11 @@ public class PhylogenomicPipeline2 {
 						r = msaTrimmer.trimUniformColumns(r);
 					}
 				}
-//				System.out.println("PhylogenomicPipeline2.getAlignment 7 " + Thread.currentThread().getName());
 				synchronized(sequenceSetToAlignment) {
-//					System.out.println("PhylogenomicPipeline2.getAlignment 8 " + Thread.currentThread().getName());
 				    sequenceSetToAlignment.put(sequenceSet, r);
 				}
 			}
 		}
-//		System.out.println("<PhylogenomicPipeline2.getAlignment 9 " + Thread.currentThread().getName());
 
 		return r;
 	}
@@ -844,11 +822,11 @@ public class PhylogenomicPipeline2 {
 		System.currentTimeMillis();
 		concatenatedAlignment.setName(concatenatedAlignmentName);
 
-		System.out.println("concatenated alignment: " +
+		logger.info("concatenated alignment: " +
 				concatenatedAlignmentName);
-		System.out.println("\ttaxa: " + concatenatedAlignment.getNTax());
-		System.out.println("\tgenes: " + concatenatedAlignment.getAlignments().length);
-		System.out.println("\tcharacters: " + 
+		logger.info("\ttaxa: " + concatenatedAlignment.getNTax());
+		logger.info("\tgenes: " + concatenatedAlignment.getAlignments().length);
+		logger.info("\tcharacters: " + 
 				concatenatedAlignment.getLength());
 
 		PhylogeneticTreeBuilder treeBuilder = createPhylogeneticTreeBuilder();
@@ -867,8 +845,6 @@ public class PhylogenomicPipeline2 {
 			treeBuilder.setConstraintTree(conTree);
 		}
 		treeBuilder.setProcesses(threads);
-		//		System.out.println("PhylogenomicPipeline2.buildConcatenatedTree() call" +
-		//		" treeBuilder.run()");
 		
 		//write alignment to file
 		String alignmentFileName = runName + "_align.phy";
@@ -879,17 +855,10 @@ public class PhylogenomicPipeline2 {
 			fw.flush();
 			fw.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		//TEMPORARY
-//		System.exit(0);
-		/////////////////
-		
 		treeBuilder.run();
-		//		System.out.println("PhylogenomicPipeline2.buildConcatenatedTree() after" +
-		//		" treeBuilder.run()");
 
 		r = treeBuilder.getTreeString();
 		writeConsensusTreeFile(r);
@@ -906,7 +875,7 @@ public class PhylogenomicPipeline2 {
 	 */
 	private void writeConsensusTreeFile(String tree) {
 		String newickTreeFileName = runName + ".nwk";
-		System.out.println("tree: " + tree);
+		logger.info("tree: " + tree);
 		System.out.println("writing tree to file: " + newickTreeFileName);
 		try {
 			FileWriter fw = new FileWriter(newickTreeFileName);
@@ -926,7 +895,6 @@ public class PhylogenomicPipeline2 {
 	 */
 	private PhylogeneticTreeBuilder createPhylogeneticTreeBuilder() {
 		PhylogeneticTreeBuilder r = new PhylogeneticTreeBuilder();
-		r.setHost(getTreeBuilderHost());
 
 		//see if building parsimony tree only
 		boolean parsimonyOnly = 
@@ -936,26 +904,15 @@ public class PhylogenomicPipeline2 {
 			commandLineProperties.getValues(HandyConstants.PARSIMONY_BL, 
 					HandyConstants.FALSE)[0].equals(HandyConstants.TRUE); 
 		if(parsimonyOnly) {
-			System.out.println("build parsimony tree only");
+			logger.info("build parsimony tree only");
 			r.setTreeBuildingMethod(HandyConstants.PARSIMONY);
 		} else if(parsimonyWithBL) {
-			System.out.println("build parsimony tree with branch lengths");
+			logger.info("build parsimony tree with branch lengths");
 			r.setTreeBuildingMethod(HandyConstants.PARSIMONY_BL);
 		} else {
-			System.out.println("build maximum likelihood tree");
+			logger.info("build maximum likelihood tree");
 			r.setTreeBuildingMethod(HandyConstants.MAXIMUM_LIKELIHOOD);
 		}
-		return r;
-	}
-
-	/**
-	 * Currently returns the localhost. This can be changed to return remote
-	 * hosts, including Cloud hosts.
-	 * @return
-	 */
-	private RemoteHost getTreeBuilderHost() {
-		RemoteHost r = null;
-		r = RemoteHost.getLocalHost();
 		return r;
 	}
 
@@ -980,7 +937,7 @@ public class PhylogenomicPipeline2 {
 		ConcatenatedSequenceAlignment r = null;
 
 		if(verboseLevel > 1) {
-			System.out.println("getConcatenated alignment of " + n + " sequences");
+			logger.info("getConcatenated alignment of " + n + " sequences");
 		}
 		int[] indices = RandomSetUtils.getRandomSet(n, 0,
 				provider.getSequenceSetCount()-1, false);
@@ -1021,7 +978,7 @@ public class PhylogenomicPipeline2 {
 		final SequenceSetProvider finalProvider = provider;
 		final int finalThreadCount = fullTreeThreads;
 		
-		System.out.println("building tree from concatenation of " + 
+		logger.info("building tree from concatenation of " + 
 				provider.getSequenceSetCount() + " alignment using " 
 				+ fullTreeThreads + " threads with method " + concatenatedTreeMethod);
 
@@ -1042,14 +999,14 @@ public class PhylogenomicPipeline2 {
 		
 		int maxThreadsForRAM = (int) Math.floor(availableRAM/supportTreeRAM);
 		
-		System.out.println("Estimated bytes of RAM needed for each tree-building thread: " +
+		logger.info("Estimated bytes of RAM needed for each tree-building thread: " +
 				supportTreeRAM);
-		System.out.println("based on estimated RAM requirement for tree building with this alignment size, " +
+		logger.info("based on estimated RAM requirement for tree building with this alignment size, " +
 				"the amount of available RAM will support " + maxThreadsForRAM 
 				+ " parallel tree-building Threads.");
 		
 		if(maxThreadsForRAM == 0) {
-			System.out.println("There may not be enough RAM to support even a single tree-building thread, " +
+			logger.info("There may not be enough RAM to support even a single tree-building thread, " +
 					"but we will try it anyway");
 			maxThreadsForRAM = 1;
 		}
@@ -1060,9 +1017,6 @@ public class PhylogenomicPipeline2 {
 			private String result;
 
 			public void run() {
-//				System.out.println("buildConctenatedTreeWithGeneWiseJackknife() threads: "
-//						+ finalThreadCount + " concatenatedMethod: " 
-//						+ finalConcatenatedTreeMethod);
 				result = buildConcatenatedTree(concatenatedAlignment, finalThreadCount, 0, 
 						finalConcatenatedTreeMethod, mlMatrix);
 			}
@@ -1096,9 +1050,9 @@ public class PhylogenomicPipeline2 {
 			threadsToWait++;
 		}
 		
-		System.out.println("Estimated bytes of RAM needed for RAxML: " + 
+		logger.info("Estimated bytes of RAM needed for RAxML: " + 
 				raxmlBytes);
-		System.out.println("support tree threads to wait for full tree: " + 
+		logger.info("support tree threads to wait for full tree: " + 
 				threadsToWait);
 		
 		int jackknifeSize = provider.getSequenceSetCount() /2;
@@ -1137,7 +1091,6 @@ public class PhylogenomicPipeline2 {
 			fw.flush();
 			fw.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		writeConsensusTreeFile(r);
@@ -1198,7 +1151,7 @@ public class PhylogenomicPipeline2 {
 	private void buildGeneWiseJackknifeTrees(
 			SequenceSetProvider provider, int reps,
 			String treeMethod, int treeThreads, String outputFileName) {
-		System.out.println("PhylogenomicPipeline2.buildGeneWiseJackknifeTrees() "
+		logger.info("PhylogenomicPipeline2.buildGeneWiseJackknifeTrees() "
 				+ reps + " trees using " + treeThreads + " threads and "
 				+ treeMethod + " as tree-building method");
 
@@ -1217,12 +1170,9 @@ public class PhylogenomicPipeline2 {
 			fw.flush();
 			fw.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-
-
 
 	/**
 	 * Builds a single tree for each replicate, using a subset of the 
@@ -1249,7 +1199,7 @@ public class PhylogenomicPipeline2 {
 	private String[] getGeneWiseJackKnifeTrees(SequenceSetProvider provider,
 			int size, int reps, int threadCount, Thread waitFor, 
 			int threadsToWait, String supportTreeMethod) {
-		System.out.println("PhylogenomicPipleline2.getGeneWiseJackKnifeTrees() " +
+		logger.info("PhylogenomicPipleline2.getGeneWiseJackKnifeTrees() " +
 				"reps: " + reps + " threadsToWait: " + threadsToWait);
 		String[] r = null;
 		Thread[] threads = new Thread[threadCount];
@@ -1274,13 +1224,12 @@ public class PhylogenomicPipeline2 {
 			threads[i].start();
 		}
 
-		System.out.println(threads.length + " threads started");
+		logger.info(threads.length + " threads started");
 		//wait for threads to finish
 		for(int i = 0; i < threads.length; i++) {
 			try {
 				threads[i].join();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -1299,7 +1248,7 @@ public class PhylogenomicPipeline2 {
 
 
 	private String buildConcatenatedNeighborJoiningTree(SequenceSetProvider provider) {
-		System.out.println("PhylogenomicPipeline2.buildConcatenatedNeighborJoiningTree()");
+		logger.info("PhylogenomicPipeline2.buildConcatenatedNeighborJoiningTree()");
 		String r = null;
 		SequenceAlignment concatenatedAlignment =
 			getConcatenatedAlignment(provider);
@@ -1310,13 +1259,13 @@ public class PhylogenomicPipeline2 {
 			concatenatedAlignment.getPairwiseScores(scoreMatrix);
 
 		r = TreeBuilder.getNJTopology(taxa, similarityMatrix, TreeBuilder.SIMILARITY);
-		System.out.println("neighbor-joining tree: " + r);
+		logger.info("neighbor-joining tree: " + r);
 		return r;
 	}
 
 	private ConcatenatedSequenceAlignment getConcatenatedAlignment(SequenceSetProvider provider) {
 		if(verbose) {
-			System.out.println("concatenating all " + 
+			logger.info("concatenating all " + 
 					provider.getSequenceSetCount() + " sequence alignments");
 		}
 		ConcatenatedSequenceAlignment r = null;
@@ -1357,20 +1306,20 @@ public class PhylogenomicPipeline2 {
 						if(member != null) {
 						    member = member.split(" ")[0];
 						} else {
-							System.out.println("Problem with alignment " + i + 
+							logger.error("Problem with alignment " + i + 
 									" for taxon " + j + 
 									" '" + taxa[j] + "'. index in alignment is "
 									+ index + 
 							" . here are the taxa: " );
 							String[] alignmentTaxa = alignments[i].getTaxa();
 							for(int k = 0; k < alignmentTaxa.length; k++) {
-								System.out.println("" + k + ": " 
+								logger.error("" + k + ": " 
 										+ alignmentTaxa[k]);
 							}
-							System.out.println("here are the titles: ");
+							logger.error("here are the titles: ");
 							String[] titles = alignments[i].getSequenceTitles();
 							for(int k = 0; k < titles.length; k++) {
-								System.out.println("" + k + ": " 
+								logger.error("" + k + ": " 
 										+ titles[k]);
 							}
 						}
@@ -1389,49 +1338,15 @@ public class PhylogenomicPipeline2 {
 			fw.flush();
 			fw.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		if(verbose) {
-			System.out.println("Done concatenating alignment. " +
+			logger.info("Done concatenating alignment. " +
 					"Total concatenated alignment length is " +
 					r.getLength());
 		}
 		return r;
-	}
-
-	private void evaluateSubstitutionMatrices(SequenceSetProvider provider, 
-			String[] matrices, int threads) {
-		//get concatenated alignment and evaluate matrices
-		SequenceAlignment concatenatedAlignment = getConcatenatedAlignment(provider);
-		System.out.println("evaluate concatenated alignment:");
-		evaluateSubstitutionMatricesForAlignment(concatenatedAlignment, 
-				matrices, threads);
-
-		//get individual alignments and evaluate each
-		FastaSequenceSet[] sequenceSets = provider.getAllSequenceSets();
-		String[] bestMatrices = new String[sequenceSets.length];
-		for(int i = 0; i < sequenceSets.length; i++) {
-			System.out.println("evaluate for set " + i);
-			SequenceAlignment alignment = getAlignment(sequenceSets[i]);
-			try {
-				bestMatrices[i] = 
-					evaluateSubstitutionMatricesForAlignment(alignment, 
-							matrices, threads);
-			} catch(Exception e) {
-				System.out.println("problem evaluating matrix for alignment "
-						+ i + " " + alignment.getName() + ":");
-				e.printStackTrace();
-			}
-		}
-
-		System.out.println("done evaluating individual alignments");
-		for(int i = 0; i < bestMatrices.length; i++) {
-			System.out.println("best matrix for " + i + " (" 
-					+ sequenceSets[i].getName() + ": " +
-					bestMatrices[i]);
-		}
 	}
 
 	/**
@@ -1446,7 +1361,7 @@ public class PhylogenomicPipeline2 {
 	private String evaluateSubstitutionMatricesForAlignment(
 			SequenceAlignment alignment, String[] matrices, int threads) {
 		String r = null;
-		System.out.println(">PhylogenomicPipeline2.evaluateSubstitutionMatrices()");
+		logger.info(">PhylogenomicPipeline2.evaluateSubstitutionMatricesForAlignment()");
 		//for the alignment, build a parsimony tree with raxml
 		RAxMLRunner rr = new RAxMLRunner(threads);
 		rr.setAlignment(alignment);
@@ -1486,19 +1401,19 @@ public class PhylogenomicPipeline2 {
 		double[] scores = new double[matrices.length];
 		for(int i = 0 ; i < scores.length; i++) {
 			scores[i] = getTreeScore(parsimonyTree, alignment, matrices[i], threads);
-			System.out.println("score for " + matrices[i] + ": " + scores[i]);
+			logger.info("score for " + matrices[i] + ": " + scores[i]);
 		}
 
 		//see which matrix did the best
 		int maxIndex = 0;
 		double maxScore = scores[0];
-		System.out.println("score for " + matrices[0] + ": " + scores[0]);
+		logger.info("score for " + matrices[0] + ": " + scores[0]);
 		for(int i = 1; i < scores.length; i++) {
 			if(scores[i] > maxScore) {
 				maxIndex = i;
 				maxScore = scores[i];
 			}
-			System.out.println("score for " + matrices[i] + ": " + scores[i]);
+			logger.info("score for " + matrices[i] + ": " + scores[i]);
 		}
 		r = matrices[maxIndex];
 		System.out.println("best score: " + scores[maxIndex] + 
@@ -1508,27 +1423,27 @@ public class PhylogenomicPipeline2 {
 
 	private void compareTreeBuildingTools(SequenceSetProvider provider, String matrix, int threads) {
 		if(verboseLevel > 0) {
-			System.out.println("PahylogenomicPipeline2.compareTreeBuildingTools()");
+			logger.info("PahylogenomicPipeline2.compareTreeBuildingTools()");
 		}
 		FastaSequenceSet[] sequenceSets = provider.getAllSequenceSets();
 
 		TreeBuilderComparator tbc = new TreeBuilderComparator();
 
 		for(int i = 60; i < sequenceSets.length; i+=10) {
-			System.out.println("concatenate " + i);
+			logger.info("concatenate " + i);
 			SequenceAlignment alignment = getConcatenatedAlignmentOfSubset(provider, i);
-			System.out.println("concatenated alignment length: " + alignment.getLength());
+			logger.info("concatenated alignment length: " + alignment.getLength());
 			tbc.compareFastTreeAndRaxmlForAlignment(alignment, matrix, threads);
 		}
 	}
 
 	private void buildTreesFromSamples(SequenceSetProvider provider) {
 		if(verboseLevel > 0) {
-			System.out.println("PhylogenomicPipeline2.buildTreesFromSamples()");
+			logger.info("PhylogenomicPipeline2.buildTreesFromSamples()");
 		}
 		FastaSequenceSet[] sequenceSets = provider.getAllSequenceSets();
 
-		System.out.println("seqs\tlength\tree");
+		logger.info("seqs\tlength\tree");
 		for(int i = 70; i < sequenceSets.length; i+=10) {
 			SequenceAlignment alignment = getConcatenatedAlignmentOfSubset(provider, i);
 			FastTreeRunner ftr = new FastTreeRunner();
@@ -1537,7 +1452,7 @@ public class PhylogenomicPipeline2 {
 			String treeString = ftr.getResult();
 			String resultLine = "" + i + "\t" + alignment.getLength() + "\t" 
 			+ treeString;
-			System.out.println(resultLine);
+			logger.info(resultLine);
 		}
 	}
 
@@ -1635,27 +1550,25 @@ public class PhylogenomicPipeline2 {
 		}
 
 		public void run() {
-			System.out.println("GeneSubsetTreeRunnable.run()");
+			logger.info("GeneSubsetTreeRunnable.run()");
 			if(waitFor != null) {
 				//wait for the waitFor Thread to complete before continuing
 				try {
-					System.out.println("GeneSubsetTreeRunnable waiting for other Thread to join");
+					logger.info("GeneSubsetTreeRunnable waiting for other Thread to join");
 					waitFor.join();
-					System.out.println("GeneSubsetTreeRunnable waitFor Thread is finished");
+					logger.info("GeneSubsetTreeRunnable waitFor Thread is finished");
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 			int building = reps[0]--;
 			while(building > 0) {
-				System.out.println("building tree: " + building);
+				logger.info("building tree: " + building);
 				ConcatenatedSequenceAlignment alignment = null;
-				//				while(alignment == null) {
 				try {
 					alignment = getConcatenatedAlignmentOfSubset(provider, size);
 				} catch(Exception e) {
-					System.out.println("Exception trying to get subset " +
+					logger.error("Exception trying to get subset " +
 							"alignment. Will try again. Here's the " +
 					"exception, but it's being handled: ");
 					e.printStackTrace();
@@ -1663,7 +1576,6 @@ public class PhylogenomicPipeline2 {
 				//				}
 				PhylogeneticTreeBuilder treeBuilder = 
 					new PhylogeneticTreeBuilder();
-				treeBuilder.setHost(getTreeBuilderHost());
 				treeBuilder.setTreeBuildingMethod(treeBuildingMethod);
 				treeBuilder.setBootstrapReps(0);
 				treeBuilder.setAlignment(alignment);

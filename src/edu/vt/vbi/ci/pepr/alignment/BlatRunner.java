@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import edu.vt.vbi.ci.util.CommandLineProperties;
+import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
-import edu.vt.vbi.ci.util.RemoteHost;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
 import edu.vt.vbi.ci.util.file.TextFile;
 
@@ -20,7 +20,6 @@ public class BlatRunner {
 	private FastaSequenceFile[] querySequenceFiles;
 	private FastaSequenceFile concatenatedSequenceSet;
 	private FastaSequenceFile[] querySets;
-	private RemoteHost host = RemoteHost.getLocalHost();
 	private TextFile[][] setResults;
 	private TextFile allResults;
 	private String resultFileName = null;
@@ -86,32 +85,6 @@ public class BlatRunner {
 			}
 		}
 
-		//
-		//
-		RemoteHost remoteHost = RemoteHost.getLocalHost();
-
-		String hostName = 
-			commandLineProperties.getValues(HandyConstants.HOST,
-			"localhost")[0];
-		if(!hostName.equals("localhost")) {
-
-			String user = commandLineProperties.getValues(HandyConstants.USER, 
-					System.getProperty("user.name"))[0];
-			String keyPath = System.getProperty("user.home") + "/.ssh/id_rsa";
-			keyPath = 
-				commandLineProperties.getValues(HandyConstants.RSA_PATH_PARAM, 
-						keyPath)[0];
-
-			remoteHost = new RemoteHost(hostName, user, keyPath);
-			remoteHost.disableStrictHostKeyChecking();
-			System.out.println("using remote host: " + hostName);
-		}
-		//		//verify host
-		//		String[] results = remoteHost.executeCommand("ls").getStdout();
-		//		for(int i = 0; i < results.length; i++) {
-		//			System.out.println(results[i]);
-		//		}
-
 		String threadParam = 
 			commandLineProperties.getValues("blast_threads", 
 					""+defaultThreads)[0];
@@ -137,7 +110,6 @@ public class BlatRunner {
 			commandLineProperties.getValues(HandyConstants.OUT, null)[0];
 
 		BlatRunner br = new BlatRunner();
-		br.setRemoteHost(remoteHost);
 		br.setSequenceSets(sequenceFiles);
 		br.setQuerySequenceFiles(queryFiles);
 		br.setThreadCount(blastThreads);
@@ -187,10 +159,6 @@ public class BlatRunner {
 		this.querySequenceFiles = queries;
 	}
 
-	public void setRemoteHost(RemoteHost host) {
-		this.host = host;
-	}
-
 	public void setEvalueCutoff(double evalue) {
 		evalueCutoff = evalue;
 	}
@@ -210,7 +178,7 @@ public class BlatRunner {
 
 	private void createConcatenatedSet() {
 		try {
-			File tempFile = File.createTempFile("cat", ".faa");
+			File tempFile = File.createTempFile("pepr_seqs", ".faa");
 			String concatenatedFileName = tempFile.getName();
 			FileWriter fw = new FileWriter(concatenatedFileName);
 			tempFile.deleteOnExit();
@@ -316,31 +284,6 @@ public class BlatRunner {
 		//for now, this assumes a single RemoteHost is being used for all blats
 
 		String workingDirectory = System.getProperty("user.dir");
-		//if host is not local host, then transfer the files
-		//to the host
-		if(!host.isLocalHost()) {
-			if(remoteWorkingDir == null) {
-				String pwdCommand = host.getCommandPath("pwd");
-				remoteWorkingDir =
-					host.executeCommand(pwdCommand).getStdout()[0];
-			}
-
-			host.setRemoteWorkingDirectory(remoteWorkingDir);
-			for(int i = 0; i < sequenceSets.length; i++) {
-				String localFileName = sequenceSets[i].getFullName();
-				String remoteFileName = sequenceSets[i].getFileName();
-				host.copyToRemoteWorkingDirectory(localFileName, remoteFileName);
-				workingDirectory = remoteWorkingDir;
-			}
-
-			for(int i = 0; i < querySets.length; i++) {
-				String localFileName = querySets[i].getFullName();
-				String remoteFileName = querySets[i].getFileName();
-				host.copyToRemoteWorkingDirectory(localFileName, remoteFileName);
-
-			}
-		}
-
 
 		//create and start the appropriate number of worker Threads
 		Thread[] threads = new Thread[threadCount];
@@ -348,7 +291,7 @@ public class BlatRunner {
 		for(int i = 0; i < threads.length; i++) {
 			int querySetIndex = i%querySets.length;
 			FastaSequenceFile queryForThread = querySets[querySetIndex];
-			threads[i] = new Thread(new BlatRunnable(host,
+			threads[i] = new Thread(new BlatRunnable(
 					queryForThread.getFileName(), querySetIndex));
 			threads[i].start();
 		}
@@ -454,7 +397,6 @@ public class BlatRunner {
 
 	private class BlatRunnable implements Runnable {
 
-		private RemoteHost host;
 		private String blatPath;
 		private String concatenatedSequenceName;
 		private String outputFormat = " -out=blast8 ";
@@ -463,8 +405,7 @@ public class BlatRunner {
 		private int hostIndex = 0;
 
 
-		public BlatRunnable(RemoteHost host, String concatenatedSequenceName, int querySetIndex) {
-			this.host = host;
+		public BlatRunnable(String concatenatedSequenceName, int querySetIndex) {
 			this.concatenatedSequenceName = concatenatedSequenceName;
 			this.querySetIndex = querySetIndex;
 			System.out.println("new BlatRunnable " + querySetIndex + ", "
@@ -473,7 +414,7 @@ public class BlatRunner {
 
 		public void run() {
 
-			blatPath = host.getCommandPath("blat");
+			blatPath = ExecUtilities.getCommandPath("blat");
 
 			try {
 				int index = getNextTargetIndex(querySetIndex);
@@ -493,7 +434,7 @@ public class BlatRunner {
 					" -minIdentity=" + minIdentity;
 
 					System.out.println("blatCommand: " + blatCommand);
-					host.executeCommand(blatCommand);
+					ExecUtilities.exec(blatCommand);
 					TextFile resultFile = null;
 					try {
 						if(useSW) {
@@ -513,8 +454,6 @@ public class BlatRunner {
 					}
 					new File(forOutfileName.getName()).delete();
 					forOutfileName.delete();
-					host.copyFromRemoteWorkingDirectory(outputName, outputName);
-
 					index = getNextTargetIndex(querySetIndex);
 				}
 			} catch (IOException ioe) {

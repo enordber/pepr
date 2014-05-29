@@ -3,18 +3,15 @@ package edu.vt.vbi.ci.pepr.alignment;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import edu.vt.vbi.ci.util.CommandResults;
+import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
-import edu.vt.vbi.ci.util.RemoteHost;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
 import edu.vt.vbi.ci.util.file.FastaSequenceSet;
 import edu.vt.vbi.ci.util.file.FastaSequenceSetImpl;
-import edu.vt.vbi.ci.util.file.TextFile;
 
 /**
  * This class will serve as a wrapper for muscle,
@@ -60,7 +57,7 @@ public class MultipleSequenceAligner {
 	/*
 	 * The RemoteHost to be used for running muscle
 	 */
-	private RemoteHost muscleHost;
+//	private RemoteHost muscleHost;
 
 	/*
 	 * The directory to use on the muscle host
@@ -83,7 +80,7 @@ public class MultipleSequenceAligner {
 	private SequenceAlignment msa;
 
 	public MultipleSequenceAligner() {
-		muscleHost = getLocalHost();
+//		muscleHost = getLocalHost();
 		determineMusclePath();
 		addMuscleOption("-fasta");
 		addMuscleOption("-stable");
@@ -107,15 +104,7 @@ public class MultipleSequenceAligner {
 			}
 			fw.close();
 
-			String muscleInFileName = tempLocalIn.getPath();
-			if(!muscleHost.isLocalHost()) {
-				//copy the file to the remote host
-				String remoteFileName =  getMuscleHostWorkingDir() +
-				tempLocalIn.getName();
-				muscleHost.copyToRemoteHost(muscleInFileName, remoteFileName);
-				muscleInFileName = remoteFileName;
-			}
-			
+			String muscleInFileName = tempLocalIn.getPath();			
 
 			String log = " -verbose -log " + muscleInFileName + ".log ";
 			log = ""; //comment out to turn on muscle logging
@@ -126,7 +115,7 @@ public class MultipleSequenceAligner {
 			"-in " + muscleInFileName;	
 
 			CommandResults muscleOut = 
-				muscleHost.executeCommand(muscleCommand);
+				ExecUtilities.exec(muscleCommand);
 
 			StringBuffer alignmentBuff = new StringBuffer();
 			String[] stdout = muscleOut.getStdout();
@@ -135,12 +124,6 @@ public class MultipleSequenceAligner {
 				alignmentBuff.append("\n");
 			}
 			String alignmentString = alignmentBuff.toString();
-
-			if(!muscleHost.isLocalHost()) {
-				//delete input file on remote host
-				String removeFileCommand = "rm " + muscleInFileName;
-				muscleHost.executeCommand(removeFileCommand);
-			}
 
 			//delete input file on local host
 			tempLocalIn.delete();
@@ -188,20 +171,6 @@ public class MultipleSequenceAligner {
 
 			String muscleIn1FileName = tempLocalIn1.getPath();
 			String muscleIn2FileName = tempLocalIn2.getPath();
-			if(!muscleHost.isLocalHost()) {
-				//copy the files to the remote host
-				String remoteFile1Name =  getMuscleHostWorkingDir() +
-				tempLocalIn1.getName();
-				muscleHost.copyToRemoteHost(muscleIn1FileName, remoteFile1Name);
-				muscleIn1FileName = remoteFile1Name;
-				
-				String remoteFile2Name =  getMuscleHostWorkingDir() +
-				tempLocalIn2.getName();
-				muscleHost.copyToRemoteHost(muscleIn2FileName, remoteFile2Name);
-				muscleIn2FileName = remoteFile2Name;
-				
-				
-			}
 
 			String log = " -verbose -log " + muscleIn1FileName + ".log ";
 			log = ""; //comment out to turn on muscle logging
@@ -214,7 +183,7 @@ public class MultipleSequenceAligner {
 			System.out.println(muscleCommand);
 			
 			CommandResults muscleOut = 
-				muscleHost.executeCommand(muscleCommand);
+					ExecUtilities.exec(muscleCommand);
 
 			StringBuffer alignmentBuff = new StringBuffer();
 			String[] stdout = muscleOut.getStdout();
@@ -223,12 +192,6 @@ public class MultipleSequenceAligner {
 				alignmentBuff.append("\n");
 			}
 			String alignmentString = alignmentBuff.toString();
-
-			if(!muscleHost.isLocalHost()) {
-				//delete input file on remote host
-				String removeFileCommand = "rm " + muscleIn1FileName;
-				muscleHost.executeCommand(removeFileCommand);
-			}
 
 			//create SequenceAlignment Object from alignment result
 			FastaSequenceSet alignment =
@@ -321,27 +284,6 @@ public class MultipleSequenceAligner {
 		return msa;
 	}
 
-	private RemoteHost getLocalHost() {
-		RemoteHost r = null;
-		String localHostURL = "localhost";
-		try {
-			localHostURL = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		String localHostUser = System.getProperty("user.name");
-		String localHostRSA = System.getProperty("user.home") + ".ssh/is_rsa";
-		r= new RemoteHost(localHostURL,
-				localHostUser, localHostRSA);
-		return r;
-	}
-
-	public void setMuscleHost(RemoteHost mh) {
-		this.muscleHost = mh;
-		determineMusclePath();
-	}
-
 	public String getMuscleHostWorkingDir() {
 		return muscleHostWorkingDir;
 	}
@@ -351,7 +293,7 @@ public class MultipleSequenceAligner {
 	}
 
 	private void determineMusclePath() {
-		muscleHostMusclePath = muscleHost.getCommandPath("muscle");
+		muscleHostMusclePath = ExecUtilities.getCommandPath("muscle");
 	}
 
 	public void addMuscleOption(String opt) {

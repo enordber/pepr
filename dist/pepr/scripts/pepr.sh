@@ -1,19 +1,19 @@
 #! /bin/sh
 
-SCRIPT_DIR=`dirname $0`
-PEPR_HOME=$SCRIPT_DIR/..
-LIB_DIR=$PEPR_HOME/lib/
+PEPRLIB=${0/scripts\/pepr.sh/lib/}
+PEPRLIB=${PEPRLIB/.\/pepr.sh/..\/lib/}
+PEPRLIB=${PEPRLIB/pepr.sh/..\/lib/}
+
 CLASSPATH=.
-CLASSPATH=$CLASSPATH:$PEPR_HOME/lib/pepr.jar
-CLASSPATH=$CLASSPATH:$PEPR_HOME/lib/log4j.jar
+CLASSPATH=$CLASSPATH:$PEPRLIB/pepr.jar
+CLASSPATH=$CLASSPATH:$PEPRLIB/log4j.jar
 
-echo $CLASSPATH
+OPTIONS=" -track blast_raxml"
+OPTIONS=$OPTIONS" -outgroup_count 1"
+OPTIONS=$OPTIONS" -ml_matrix PROTGAMMAWAG"
 
-MAINCLASS=edu.vt.vbi.ci.pepr.tree.pipeline.PhyloPipeline 
+MAINCLASS=edu.vt.vbi.ci.pepr.tree.pipeline.PhyloPipeline
 
 set -x
-JAVA_CMD="java -Xmx4g -Dlog4j.configuration=file:$PEPR_HOME/lib/log4j.properties\
-           -cp $CLASSPATH $MAINCLASS $*"
 
-$JAVA_CMD
-
+java -Dlog4j.configuration=file:$PEPRLIB/log4j.properties -cp $CLASSPATH $MAINCLASS $OPTIONS $*

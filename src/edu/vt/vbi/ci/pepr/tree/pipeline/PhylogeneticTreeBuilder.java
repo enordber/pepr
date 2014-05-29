@@ -11,12 +11,13 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.Random;
 
+import org.apache.log4j.Logger;
+
 import edu.vt.vbi.ci.pepr.alignment.SequenceAlignment;
 import edu.vt.vbi.ci.pepr.tree.FastTreeRunner;
 import edu.vt.vbi.ci.pepr.tree.RAxMLRunner;
 import edu.vt.vbi.ci.util.CommandResults;
 import edu.vt.vbi.ci.util.HandyConstants;
-import edu.vt.vbi.ci.util.RemoteHost;
 
 /**
  * This class handles building/estimating phylogenetic trees.
@@ -33,21 +34,14 @@ public class PhylogeneticTreeBuilder implements Runnable{
 	private boolean debug = false;
 	public static final String MR_BAYES = "MrBayes";
 
-
-	private RemoteHost host;
-
 	/**
 	 * The remoteWorkingDirectory on the Remote Host must
 	 * contain the MrBayesMonitorRunner.jar.
 	 */
-	private String remoteWorkingDirectory;
-	private String remoteUserName;
 	private SequenceAlignment alignment;
 	private Properties configProperties;
 	private String configFileName;
 	private String runName;
-	private String jarFileName = 
-		"PhylogenomicPipeline.jar";
 
 	private String treeBuildingMethod = MR_BAYES;
 	private String mlMatrix;
@@ -57,37 +51,40 @@ public class PhylogeneticTreeBuilder implements Runnable{
 	private boolean useRaxmlBranchLengths = false;
 	private boolean nucleotide = false;
 	private boolean useTaxonNames = true;
+	private Logger logger = Logger.getLogger(getClass());
 
 	private String constraintTree;
 
 	public PhylogeneticTreeBuilder() {
-		remoteUserName = System.getProperty("user.name");
-		remoteWorkingDirectory = System.getProperty("user.dir").trim();
 
 		String debugProp = System.getProperty(HandyConstants.DEBUG);
 		if(debugProp != null && debugProp.equals(HandyConstants.TRUE)) {
 			debug = true;
 		}
 
-		host = RemoteHost.getLocalHost();
-		host.setRemoteJavaPath(host.getCommandPath("java"));
-		host.setRemoteWorkingDirectory(remoteWorkingDirectory);
-		Random random = new Random();
+		String rseedProp = System.getProperty("random_seed", ""+System.currentTimeMillis());
+		long rseed = Long.parseLong(rseedProp);
+		logger.info("PhylogeneticTreeBuilder using random number seed " + rseed);
+		Random random = new Random(rseed);
 		configFileName = "mbm_config_" + Math.abs(random.nextInt());
 
 		setDefaultConfigurationProperties();
 		addProperties(System.getProperties());
 
 		String bootstrapProp = System.getProperty(HandyConstants.SUPPORT_REPS);
+		int bs = bootstrapReps;
 		if(bootstrapProp != null) {
 			try {
-				int bs = Integer.parseInt(bootstrapProp);
-				setBootstrapReps(bs);
+				bs = Integer.parseInt(bootstrapProp);
 			} catch(NumberFormatException nfe) {
-				System.out.println("Value for " + HandyConstants.SUPPORT_REPS +
+				logger.info("Value for " + HandyConstants.SUPPORT_REPS +
 						" must be an integer, not: " + bootstrapProp);
+				logger.info("Using default bootstrap value of " + bootstrapReps);
+				bs = bootstrapReps;
 			}
+			setBootstrapReps(bs);
 		}
+		
 	}
 
 	/**
@@ -125,7 +122,6 @@ public class PhylogeneticTreeBuilder implements Runnable{
 			System.out.println("PhylogeneticTreeBuilder.buildRaxmlParsimonyTree()");
 		}
 		RAxMLRunner raxmlRunner = new RAxMLRunner(getProcesses());
-		raxmlRunner.setHost(host);
 		raxmlRunner.setParsimonyOnly(true);
 		raxmlRunner.setBootstrapReps(getBootstrapReps());
 		raxmlRunner.setAlignment(getAlignment());
@@ -140,11 +136,7 @@ public class PhylogeneticTreeBuilder implements Runnable{
 	 * lengths the second run.
 	 */
 	private void buildRaxmlParsimonyTreeWithBL() {
-		if(debug) {
-			System.out.println("PhylogeneticTreeBuilder.buildRaxmlParsimonyTreeWithBL()");
-		}
 		RAxMLRunner raxmlRunner = new RAxMLRunner(getProcesses());
-		raxmlRunner.setHost(host);
 		raxmlRunner.setParsimonyWithBL(true);
 		raxmlRunner.setBootstrapReps(getBootstrapReps());
 		raxmlRunner.setAlignment(getAlignment());
@@ -158,11 +150,7 @@ public class PhylogeneticTreeBuilder implements Runnable{
 	 * by default), using the current RAxML parameters.
 	 */
 	private void buildRaxmlTree() {
-		if(debug) {
-			System.out.println("PhylogeneticTreeBuilder.buildRaxmlTree()");
-		}
 		RAxMLRunner raxmlRunner = new RAxMLRunner(getProcesses());
-		raxmlRunner.setHost(host);
 		raxmlRunner.setBootstrapReps(getBootstrapReps());
 		raxmlRunner.setAlignment(getAlignment());
 		raxmlRunner.setMatrix(mlMatrix);
@@ -177,9 +165,6 @@ public class PhylogeneticTreeBuilder implements Runnable{
 	}
 
 	private void buildFastTree() {
-		if(debug) {
-			System.out.println("PhylogeneticTreeBuilder.buildFastTree()");
-		}
 		FastTreeRunner ftr = new FastTreeRunner();
 		ftr.setNucleoide(nucleotide);
 		ftr.setAlignment(getAlignment());
@@ -198,11 +183,6 @@ public class PhylogeneticTreeBuilder implements Runnable{
 	}
 
 	public void setAlignment(SequenceAlignment alignment) {
-		if(debug) {
-			System.out.println("PhylogeneticTreeBuilder.setAlignment() "
-					+ alignment.getName());
-		}
-
 		this.alignment = alignment;
 
 		try {
@@ -251,28 +231,6 @@ public class PhylogeneticTreeBuilder implements Runnable{
 				HandyConstants.VARIABLE_TOPLOGY);
 		configProperties.setProperty(HandyConstants.NRUNS, "1");
 		configProperties.setProperty(HandyConstants.MB_PATH, "/usr/bin/mb");
-	}
-
-	private void writeConfigFile(String fileName) throws IOException {
-		if(configProperties != null) {
-			System.out.println("PhylogeneticTreeBuilder.writeConfigProperties() " +
-					"configProperties is not null, write to file: " + fileName);
-			FileOutputStream fos = new FileOutputStream(fileName);
-			configProperties.store(fos, "Configuration File for" +
-			" MrBayesMonitorRunner");
-			fos.close();
-		} else {
-			System.out.println("PhylogeneticTreeBuilder.writeConfigProperties() " +
-			"configProperties is null");
-		}
-	}
-
-	public RemoteHost getHost() {
-		return host;
-	}
-
-	public void setHost(RemoteHost host) {
-		this.host = host;
 	}
 
 	public String getConfigFileName() {

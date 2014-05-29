@@ -8,7 +8,6 @@ import java.util.HashSet;
 
 import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
-import edu.vt.vbi.ci.util.RemoteHost;
 
 /**
  * Trims a SequenceAlignment. The actual trimming method 
@@ -26,8 +25,6 @@ public class MSATrimmer {
 	private double portionOfSequencesForConservedSite = 0.8;
 
 	private File workingDir;
-	private RemoteHost host = RemoteHost.getLocalHost();
-
 	private boolean keepFiles = false;
 
 	public MSATrimmer() {
@@ -100,13 +97,13 @@ public class MSATrimmer {
 		String gblocksB3Param = "-b3=8";
 		String gblocksB5Param = "-b5=h";
 		//run GBlocks on the temporary alignment file
-		String gblocksCommand = host.getCommandPath("Gblocks") + 
+		String gblocksCommand = ExecUtilities.getCommandPath("Gblocks") + 
 		" " + gblocksInputFile.getAbsolutePath() 
 		+ " -o " + gblocksB1Param + " " + gblocksB3Param + " " + gblocksB5Param;
 		if(debug) {
 			System.out.println("MSATrimmer.trimWithGblocks() " + gblocksCommand);
 		}
-		host.executeCommand(gblocksCommand);
+		ExecUtilities.exec(gblocksCommand);
 
 		//read results from GBlocks output file
 		String gblocksResultFileName = 

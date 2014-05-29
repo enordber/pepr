@@ -68,9 +68,9 @@ public class ExecUtilities {
 		InputStream is = proc.getInputStream();
 		InputStream errStream = proc.getErrorStream();
 		BufferedReader reader = 
-			new BufferedReader(new InputStreamReader(is));
+				new BufferedReader(new InputStreamReader(is));
 		BufferedReader errorReader = 
-			new BufferedReader(new InputStreamReader(errStream));
+				new BufferedReader(new InputStreamReader(errStream));
 
 		ReaderRunnable errorRead = new ReaderRunnable(errorReader);
 		Thread errorThread = new Thread(errorRead);
@@ -151,16 +151,23 @@ public class ExecUtilities {
 	 */
 	public static String getCommandPath(String cmd) {
 		String r = null;
-		//use 'which' utility to look for command path
-		String whichCmd = "/usr/bin/which " + cmd;
-		CommandResults whichRes= ExecUtilities.exec(whichCmd);
 
-		if(whichRes == null) {
-			logger.info("unable to get command path for '" + cmd + "'");
-		} else {
-			String[] stdout = whichRes.getStdout();
-			if(stdout.length > 0) {
-				r = stdout[0];
+		//check System properties for a path for this command
+		r = System.getProperty(cmd);
+
+		if(r == null ){
+			//if no path is in System properties, use 'which' 
+			//utility to look for command path
+			String whichCmd = "/usr/bin/which " + cmd;
+			CommandResults whichRes= ExecUtilities.exec(whichCmd);
+
+			if(whichRes == null) {
+				logger.info("unable to get command path for '" + cmd + "'");
+			} else {
+				String[] stdout = whichRes.getStdout();
+				if(stdout.length > 0) {
+					r = stdout[0];
+				}
 			}
 		}
 		return r;

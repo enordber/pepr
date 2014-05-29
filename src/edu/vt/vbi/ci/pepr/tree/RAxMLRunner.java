@@ -7,12 +7,13 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.apache.log4j.Logger;
+
 import edu.vt.vbi.ci.pepr.alignment.SequenceAlignment;
 import edu.vt.vbi.ci.pepr.alignment.SequenceAlignmentParser;
 import edu.vt.vbi.ci.util.CommandResults;
 import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
-import edu.vt.vbi.ci.util.RemoteHost;
 import edu.vt.vbi.ci.util.file.TextFile;
 
 /**
@@ -31,11 +32,12 @@ public class RAxMLRunner {
 	private static final String RAXML = "raxml";
 	private static Random random = new Random();
 	private static HashSet usedRunNames = new HashSet();
+	private Logger logger;
 	private SequenceAlignment alignment;
 	private int bootstrapReps = 10;
 	private String runName;
 	private int threadCount;
-	private RemoteHost host;
+//	private RemoteHost host;
 	private boolean useTaxonNames = true;
 	private boolean doPerSiteLikelihoods = false;
 	private boolean deleteGeneratedFiles = true;
@@ -44,17 +46,6 @@ public class RAxMLRunner {
 	private String matrix = "PROTGAMMALGF";
 	private String[] perSiteLLTrees;
 	private String perSiteLLResultFileName;
-
-	/**
-	 * These are the Remote Hosts for running bootstrap replicates.
-	 * If a Host can run multiple simultaneous jobs it can be listed
-	 * multiple times. For now, there is no sophisticated load balancing.
-	 * The number of bootstrap replicates is divided by the number of
-	 * bootstrapHosts entries and that number of replicated is sent to each
-	 * host entry (which might mean sending multiple jobs to the same actual
-	 * host).
-	 */
-	private RemoteHost[] bootstrapHosts;
 
 	/*
 	 * if parsimonyOnly is true, raxml is run with the '-y' flag,
@@ -87,8 +78,8 @@ public class RAxMLRunner {
 	}
 
 	public RAxMLRunner(int threads) {
+		logger = Logger.getLogger("RAxMLRunner");
 		setThreadCount(threads);
-		host = RemoteHost.getLocalHost();
 
 		String bootstrapProp = System.getProperty(HandyConstants.SUPPORT_REPS);
 		if(bootstrapProp != null) {
@@ -103,8 +94,6 @@ public class RAxMLRunner {
 	}
 
 	public void run() {
-//		System.out.println("RAxMLRunner.run()");
-//		System.out.println("algorithm: " + algorithm);
 		runName = null;
 
 		if(algorithm == PARSIMONY_WITH_BL_ALGORITHM) {
@@ -112,13 +101,13 @@ public class RAxMLRunner {
 		} else if(algorithm == PER_SITE_LL_ALGORITHM) {
 			runRaxmlPerSiteLL();
 		} else {
-			String raxmlPath = host.getCommandPath(RAXML_HPC);
+			String raxmlPath = ExecUtilities.getCommandPath(RAXML_HPC);
 			if(raxmlPath == null || raxmlPath.trim().startsWith("no ")) {
-				raxmlPath = host.getCommandPath(RAXML);
+				raxmlPath = ExecUtilities.getCommandPath(RAXML);
 			}
 
 			if(getThreadCount() > 1) {
-				raxmlPath = host.getCommandPath("raxmlHPC-PTHREADS");
+				raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 			}
 			//		System.out.println("raxml path: " + raxmlPath);
 			String raxmlCommand = "";
@@ -136,7 +125,6 @@ public class RAxMLRunner {
 				writeAlignmentToFile(getAlignment(), infileName);
 				//determine the raxml run name, and the various result file names
 				//that will be generated
-				host.copyToRemoteHost(infileName, infileName);
 				String runName = getRaxmlRunName();
 
 				int randomSeed = getOddRandomSeed();
@@ -170,7 +158,7 @@ public class RAxMLRunner {
 				}
 				System.out.println("raxml command: " + raxmlCommand);
 				//run raxml, and wait for it to finish
-				CommandResults results = host.executeCommand(raxmlCommand);
+				CommandResults results = ExecUtilities.exec(raxmlCommand);
 				//grab the tree string from the result file
 
 			} catch (IOException e) {
@@ -190,13 +178,13 @@ public class RAxMLRunner {
 
 	private void runRaxmlPerSiteLL() {
 
-		String raxmlPath = host.getCommandPath(RAXML_HPC);
+		String raxmlPath = ExecUtilities.getCommandPath(RAXML_HPC);
 		if(raxmlPath == null || raxmlPath.trim().startsWith("no ")) {
-			raxmlPath = host.getCommandPath(RAXML);
+			raxmlPath = ExecUtilities.getCommandPath(RAXML);
 		}
 
 		if(getThreadCount() > 1) {
-			raxmlPath = host.getCommandPath("raxmlHPC-PTHREADS");
+			raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 		}
 		//		System.out.println("raxml path: " + raxmlPath);
 		String raxmlCommand = "";
@@ -220,7 +208,6 @@ public class RAxMLRunner {
 			
 			//determine the raxml run name, and the various result file names
 			//that will be generated
-			host.copyToRemoteHost(infileName, infileName);
 			String runName = getRaxmlRunName();
 
 			//configure raxml command string
@@ -235,7 +222,7 @@ public class RAxMLRunner {
 			perSiteLLResultFileName = 
 				"RAxML_perSiteLLs." + runName;
 			System.out.println("ML branch length raxml command: " + raxmlCommand);
-			CommandResults secondResults = host.executeCommand(raxmlCommand);
+			CommandResults secondResults = ExecUtilities.exec(raxmlCommand);
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -246,13 +233,13 @@ public class RAxMLRunner {
 	private void runRaxmlParsimonyWithBranchLengths() {
 		System.out.println("RAxMLRunner.runRaxmlParsimonyWithBranchLengths()");
 
-		String raxmlPath = host.getCommandPath(RAXML_HPC);
+		String raxmlPath = ExecUtilities.getCommandPath(RAXML_HPC);
 		if(raxmlPath == null || raxmlPath.trim().startsWith("no ")) {
-			raxmlPath = host.getCommandPath(RAXML);
+			raxmlPath = ExecUtilities.getCommandPath(RAXML);
 		}
 
 		if(getThreadCount() > 1) {
-			raxmlPath = host.getCommandPath("raxmlHPC-PTHREADS");
+			raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 		}
 		//		System.out.println("raxml path: " + raxmlPath);
 		String raxmlCommand = "";
@@ -269,7 +256,6 @@ public class RAxMLRunner {
 			writeAlignmentToFile(getAlignment(), infileName);
 			//determine the raxml run name, and the various result file names
 			//that will be generated
-			host.copyToRemoteHost(infileName, infileName);
 			String runName = getRaxmlRunName();
 
 			//configure raxml command string
@@ -283,7 +269,7 @@ public class RAxMLRunner {
 			}
 			System.out.println("parsimony tree raxml command: " + raxmlCommand);
 			//run raxml, and wait for it to finish
-			CommandResults firstResults = host.executeCommand(raxmlCommand);
+			CommandResults firstResults = ExecUtilities.exec(raxmlCommand);
 
 			//do a second raxml run to determine the ML branch lengths 
 			//given the parsimony tree that was just calculated
@@ -301,7 +287,7 @@ public class RAxMLRunner {
 				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
 			}
 			System.out.println("ML branch length raxml command: " + raxmlCommand);
-			CommandResults secondResults = host.executeCommand(raxmlCommand);
+			CommandResults secondResults = ExecUtilities.exec(raxmlCommand);
 			if(deleteGeneratedFiles()) {
 				new File(parsimonyTreeFileName).deleteOnExit();
 			}
@@ -336,8 +322,6 @@ public class RAxMLRunner {
 	public String getBestTreeWithSupports() {
 		String bestTreeWithSupportsFileName = "RAxML_bipartitions." 
 			+ getRaxmlRunName();
-		host.copyFromRemoteHost(bestTreeWithSupportsFileName,
-				bestTreeWithSupportsFileName);
 		TextFile treeFile;
 		StringBuffer sb = new StringBuffer();
 		try {
@@ -357,8 +341,6 @@ public class RAxMLRunner {
 	public String getBestTree() {
 		String bestTreeWithSupportsFileName = "RAxML_result." 
 			+ getRaxmlRunName();
-		host.copyFromRemoteHost(bestTreeWithSupportsFileName,
-				bestTreeWithSupportsFileName);
 		TextFile treeFile;
 		StringBuffer sb = new StringBuffer();
 		try {
@@ -379,8 +361,6 @@ public class RAxMLRunner {
 		String r = null;
 		String bestTreeWithSupportsFileName = "RAxML_parsimonyTree." 
 			+ getRaxmlRunName();
-		host.copyFromRemoteHost(bestTreeWithSupportsFileName,
-				bestTreeWithSupportsFileName);
 		TextFile treeFile;
 		StringBuffer sb = new StringBuffer();
 		try {
@@ -395,8 +375,6 @@ public class RAxMLRunner {
 				treeFile.getFile().deleteOnExit();
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-//			e.printStackTrace();
 		}
 
 		return r;
@@ -405,8 +383,6 @@ public class RAxMLRunner {
 	public String getParsimonyWithBLTree() {
 		String parsimonyTreeWithBL = "RAxML_result." 
 			+ getRaxmlRunName() + "BL";
-		host.copyFromRemoteHost(parsimonyTreeWithBL,
-				parsimonyTreeWithBL);
 		TextFile treeFile;
 		StringBuffer sb = new StringBuffer();
 		try {
@@ -481,7 +457,7 @@ public class RAxMLRunner {
 
 	private String getRaxmlRunName() {
 		if(runName == null) {
-			runName = getAvailableRaxmlRunName(getHost());
+			runName = getAvailableRaxmlRunName();
 		}
 		if(deleteGeneratedFiles()) {
 			//target info file for deleting on exit
@@ -501,9 +477,7 @@ public class RAxMLRunner {
 	 */
 	public String getSupportDecoratedTree(SequenceAlignment alignment, 
 			String mainTree, String[] supportTrees) {
-		System.out.println("RAxMLRunner.getSupportDecoratedTree()");
 		String r = null;
-		RemoteHost localHost = RemoteHost.getLocalHost();
 		
 		String fullTreeFileName;
 		String supportTreeFileName;
@@ -524,7 +498,7 @@ public class RAxMLRunner {
 			File supportTreeFile = File.createTempFile("raxml_", ".sup", workingDir);
 			//supportTreeFile.deleteOnExit();
 			supportTreeFileName = supportTreeFile.getName();
-			System.out.println("write support trees to " + supportTreeFileName);
+			logger.info("write support trees to " + supportTreeFileName);
 			FileWriter supportTreeWriter = new FileWriter(supportTreeFile);
 			for(int i= 0; i < supportTrees.length; i++) {
 				supportTreeWriter.write(supportTrees[i] + "\n");
@@ -538,21 +512,21 @@ public class RAxMLRunner {
 			writeAlignmentToFile(alignment, alignmentFileName);
 
 			//get the raxml command path
-			String raxmlPath = localHost.getCommandPath("raxmlHPC-PTHREADS");
+			String raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 			if(getThreadCount() <= 1) {
-				raxmlPath = localHost.getCommandPath("raxmlHPC");
+				raxmlPath = ExecUtilities.getCommandPath("raxmlHPC");
 			}
 			//create raxml command 
-			String runName = getAvailableRaxmlRunName(localHost);
+			String runName = getAvailableRaxmlRunName();
 			String raxmlDecorateCommand = raxmlPath + " -f b" +
 			" -z " + supportTreeFileName + " -t " + fullTreeFileName + 
 			" -T " + getThreadCount() + " -m " + matrix + " -n " + runName +
 			" -s " + alignmentFileName;
 			
 			//run RAxML command
-			System.out.println("raxml decorate command: " + raxmlDecorateCommand);
+			logger.info("raxml decorate command: " + raxmlDecorateCommand);
 			CommandResults results = 
-				localHost.executeCommand(raxmlDecorateCommand);
+					ExecUtilities.exec(raxmlDecorateCommand);
 			//read result from file
 			String resultFileName = "RAxML_bipartitions." + runName;
 			TextFile resultFile = new TextFile(resultFileName);
@@ -561,20 +535,19 @@ public class RAxMLRunner {
 				resultFile.getFile().deleteOnExit();
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		return r;
 	}
 	
-	private static synchronized String getAvailableRaxmlRunName(RemoteHost host) {
+	private static synchronized String getAvailableRaxmlRunName() {
 		String r = null;
 
 		int i = lastFileNumberUsed++;
 		r = "raxmlRun"+ i;
 
-		while(usedRunNames.contains(r) || host.fileExists("RAxML_info." + r)) {
+		while(usedRunNames.contains(r) || new File("RAxML_info." + r).exists()) {
 			i++;
 			r = "raxmlRun"+ i;			
 		}
@@ -592,14 +565,6 @@ public class RAxMLRunner {
 		this.threadCount = threadCount;
 	}
 
-	RemoteHost getHost() {
-		return host;
-	}
-
-	public void setHost(RemoteHost host) {
-		this.host = host;
-	}
-
 	public void setParsimonyOnly(boolean parsOnly) {
 		parsimonyOnly = parsOnly;
 		if(parsOnly) {
@@ -609,7 +574,6 @@ public class RAxMLRunner {
 	}
 
 	public void setParsimonyWithBL(boolean parsBL) {
-//		System.out.println("RAxMLRunner.setParsimonyWithBL() " + parsBL);
 		parsimonyWithBL = parsBL;
 		if(parsBL) {
 			algorithm = PARSIMONY_WITH_BL_ALGORITHM;
@@ -623,10 +587,6 @@ public class RAxMLRunner {
 		}
 	}
 	
-	public void setBootstrapHosts(RemoteHost[] hosts) {
-		bootstrapHosts = hosts;
-	}
-
 	public boolean deleteGeneratedFiles() {
 		return deleteGeneratedFiles;
 	}

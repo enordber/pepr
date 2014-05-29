@@ -19,9 +19,9 @@ import edu.vt.vbi.ci.pepr.stats.StatisticsUtilities;
 import edu.vt.vbi.ci.pepr.tree.PhylogeneticTreeRefiner;
 import edu.vt.vbi.ci.util.CommandLineProperties;
 import edu.vt.vbi.ci.util.CommandResults;
+import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
 import edu.vt.vbi.ci.util.IntPair;
-import edu.vt.vbi.ci.util.RemoteHost;
 import edu.vt.vbi.ci.util.SequenceSetExtractor;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
 import edu.vt.vbi.ci.util.file.TextFile;
@@ -134,10 +134,13 @@ public class PhyloPipeline {
 		runName = "pepr-" + System.currentTimeMillis();
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
 
-		//set log file name, based on run name
-		System.setProperty("logfile.name", runName + ".log");
+		System.out.println("configure logger");
+		//set log file name, based on run name, if it has not already been set
+		System.setProperty("logfile.name",System.getProperty("logfile.name", runName + ".log"));
 		logger = Logger.getLogger("PEPR");
 		logger.info("Starting " + new Date());
+		System.out.println("logger configured with log file name '" + runName + ".log'");
+		System.out.println("logger: " + logger);
 
 		boolean printHelp = args == null || args.length == 0 ||
 				clp.getValues(HandyConstants.HELP, 
@@ -146,15 +149,16 @@ public class PhyloPipeline {
 								HandyConstants.FALSE)[0].equals(HandyConstants.TRUE) ||
 								clp.getValues("?", 
 										HandyConstants.FALSE)[0].equals(HandyConstants.TRUE);
-		if(printHelp) {
-			printHelp();
-			exit();
-		}
 
 		setCommandPaths();
 
 		//check for required programs
 		checkForRequiredPrograms();
+
+		if(printHelp) {
+			printHelp();
+			exit();
+		}
 
 		logger.info("run name: " + runName);
 
@@ -654,7 +658,6 @@ public class PhyloPipeline {
 		String bin = "bin";
 		String os = System.getProperty("os.name");
 		logger.info("os: " + os);
-		logger.info("os name: " + os);
 		if(os.startsWith("Mac")) {
 			bin = "bin_mac";
 		} 
@@ -687,6 +690,7 @@ public class PhyloPipeline {
 
 		for(int i = 0; i < commands.length; i++) {
 			String fullCommandPath = binDirName + commands[i];
+			logger.info("set path for '" + commands[i] + "' to '" + fullCommandPath + "'" );
 			System.setProperty(commands[i], fullCommandPath);
 		}
 	}
@@ -701,8 +705,7 @@ public class PhyloPipeline {
 		String mclOutputFileName = mclInputFileName + "_mclOut";
 
 		//construct mcl command
-		RemoteHost host = RemoteHost.getLocalHost();
-		String mclPath = host.getCommandPath("mcl");
+		String mclPath = ExecUtilities.getCommandPath("mcl");
 
 		String mclCommand = mclPath + " " + mclInputFileName + " --abc "
 				+ " -I " + inflation + " -te " + threads + " -o " +
@@ -711,7 +714,7 @@ public class PhyloPipeline {
 		if(verbose > 0) {
 			System.out.println("mcl command: " + mclCommand);
 		}
-		CommandResults results = host.executeCommand(mclCommand);
+		CommandResults results = ExecUtilities.exec(mclCommand);
 		try {
 			r = new TextFile(mclOutputFileName);
 		} catch (IOException e) {
@@ -1148,7 +1151,7 @@ public class PhyloPipeline {
 
 	}
 	private void checkForRequiredPrograms() {
-		RemoteHost host = RemoteHost.getLocalHost();
+		logger.info("Check for required programs...");
 		String[] requiredPrograms = new String[]{
 				"blastall",
 				"blat",
@@ -1167,7 +1170,7 @@ public class PhyloPipeline {
 		boolean[] programFound = new boolean[requiredPrograms.length];
 
 		for(int i = 0; i < programFound.length; i++) {
-			String path = host.getCommandPath(requiredPrograms[i]);
+			String path = ExecUtilities.getCommandPath(requiredPrograms[i]);
 			programFound[i] = path != null;
 			if(!programFound[i]) {
 				logger.info("The required program '" + requiredPrograms[i] +

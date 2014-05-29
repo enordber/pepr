@@ -107,40 +107,12 @@ public class Bipartition implements Comparable{
 		return largerSide;
 	}
 
-	/**
-	 * Bipartitions are equal if the both BitSets are equal.
-	 */
-	public boolean equals(Object other) {
-		boolean r = false;
-		if(other != null) {
-			Bipartition otherBP = (Bipartition)other;
-			r = this.getSmallerSide().equals(otherBP.getSmallerSide())
-			&& this.getLargerSide().equals(otherBP.getLargerSide());
-			if(r && useParticipatingTaxonSetForEqualityCheck) {
-				r = isSupertreeEquivalent(otherBP);
-			} 
-		}
-		return r;
-	}
-
 	public boolean isSupertreeEquivalent(Bipartition otherBP) {
 		boolean r = false;
 		r = this.getParticipatingTaxonSet().equals( 
 				otherBP.getParticipatingTaxonSet());
 
 		return r;
-	}
-
-	/**
-	 * The hash code of a Bipartition is the hash code of the 
-	 * smallerSide BitSet.
-	 */
-	public int hashCode() {
-		int hashCode = getSmallerSide().hashCode();
-		if(useParticipatingTaxonSetForEqualityCheck &&  participatingTaxonSet != null) {
-			hashCode += participatingTaxonSet.hashCode();
-		}
-		return hashCode;
 	}
 
 	/**
@@ -314,6 +286,35 @@ public class Bipartition implements Comparable{
 		return r;
 	}
 	
+	/**
+	 * The hash code of a Bipartition is the hash code of the 
+	 * smallerSide BitSet.
+	 */
+	public int hashCode() {
+		int hashCode = getSmallerSide().hashCode();
+		if(useParticipatingTaxonSetForEqualityCheck &&  participatingTaxonSet != null) {
+			hashCode += participatingTaxonSet.hashCode();
+		}
+		return hashCode;
+	}
+
+	/**
+	 * Bipartitions are equal if the both BitSets are equal.
+	 */
+	public boolean equals(Object other) {
+		boolean r = false;
+		if(other != null) {
+			Bipartition otherBP = (Bipartition)other;
+			r = this.getSmallerSide().equals(otherBP.getSmallerSide())
+			&& this.getLargerSide().equals(otherBP.getLargerSide());
+			if(r && useParticipatingTaxonSetForEqualityCheck) {
+				r = isSupertreeEquivalent(otherBP);
+			} 
+		}
+		return r;
+	}
+
+
 	public int getSize() {
 		return size;
 	}

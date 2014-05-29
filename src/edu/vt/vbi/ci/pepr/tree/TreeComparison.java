@@ -14,9 +14,9 @@ import edu.vt.vbi.ci.pepr.stats.StatisticsUtilities;
 import edu.vt.vbi.ci.pepr.tree.pipeline.PhyloPipeline;
 import edu.vt.vbi.ci.util.CommandLineProperties;
 import edu.vt.vbi.ci.util.CommandResults;
+import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.ExtendedBitSet;
 import edu.vt.vbi.ci.util.HandyConstants;
-import edu.vt.vbi.ci.util.RemoteHost;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
 import edu.vt.vbi.ci.util.file.TextFile;
 
@@ -748,7 +748,6 @@ public class TreeComparison {
 		String[] r = null;
 		try {
 			File workingDir = new File(System.getProperty("user.dir"));
-			RemoteHost host = RemoteHost.getLocalHost();
 			//Write alignment to a file in phylip format
 			String alignmentFileName = alignment.getName() + ".phy";
 			FileWriter alignmentWriter = new FileWriter(alignmentFileName);
@@ -774,12 +773,12 @@ public class TreeComparison {
 
 			//run consel with the alignment and the trees
 			//run raxml to get per-site log likelihoods
-			String raxmlPath = host.getCommandPath("raxmlHPC-PTHREADS");
+			String raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 			String raxmlCommand = raxmlPath + " -f g -m "
 			+ matrix + " -T " + processors + " -z " + treeFileName 
 			+ " -s " + alignmentFileName + " -n " + raxmlRunName;
 			System.out.println(raxmlCommand);
-			host.executeCommand(raxmlCommand);
+			ExecUtilities.exec(raxmlCommand);
 
 			//Raxml result file needs to be renamed so the makermt result files
 			//will have unique names.
@@ -790,25 +789,25 @@ public class TreeComparison {
 			raxmlOut.renameTo(new File(renamedRaxmlOutFile));
 
 			//run makermt on per site likelihood file
-			String makermtPath = host.getCommandPath("makermt");
+			String makermtPath = ExecUtilities.getCommandPath("makermt");
 			String makermtCommnd = makermtPath + 
 			" -b 10" + //-b 10 multiplies the number of bootstraps by 10, for less error
 			" --puzzle " + renamedRaxmlOutFile;
 			System.out.println(makermtCommnd);
-			host.executeCommand(makermtCommnd);			
+			ExecUtilities.exec(makermtCommnd);			
 			String makermtOutFileName = alignmentFileName + "_perSiteLLs";
 
 			//run consel on makermt result file
-			String conselPath = host.getCommandPath("consel");
+			String conselPath = ExecUtilities.getCommandPath("consel");
 			String conselCommand = conselPath + " " + makermtOutFileName;
 			System.out.println(conselCommand);
-			host.executeCommand(conselCommand);
+			ExecUtilities.exec(conselCommand);
 
 			//run catpv on consel result file
-			String catpvPath = host.getCommandPath("catpv");
+			String catpvPath = ExecUtilities.getCommandPath("catpv");
 			String catpvCommand = catpvPath + " -v " + makermtOutFileName;
 			System.out.println(catpvCommand);
-			CommandResults results = host.executeCommand(catpvCommand);
+			CommandResults results = ExecUtilities.exec(catpvCommand);
 
 			String[] resultTable = results.getStdout();
 			r = resultTable;

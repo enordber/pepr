@@ -9,11 +9,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.log4j.Logger;
+
 import edu.vt.vbi.ci.pepr.alignment.MultipleSequenceAligner;
 import edu.vt.vbi.ci.pepr.alignment.SequenceAlignment;
 import edu.vt.vbi.ci.util.CommandLineProperties;
+import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
-import edu.vt.vbi.ci.util.RemoteHost;
 import edu.vt.vbi.ci.util.SequenceSetExtractor;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
 import edu.vt.vbi.ci.util.file.TextFile;
@@ -34,6 +36,7 @@ public class HMMSetEnhancer {
 	private int currentGenome = -1; //used by hmmsearch threads
 	private int minTaxa;
 	private int maxTaxa;
+	private Logger logger = Logger.getLogger(getClass());
 
 	public static void main(String[] args) {
 		CommandLineProperties clp = new CommandLineProperties(args);
@@ -81,9 +84,6 @@ public class HMMSetEnhancer {
 	}
 
 	public void run() {
-		//		System.out.println("HMMSetEnhancer.run() outgroupsToInclude: " + outgroupsToInclude);
-		RemoteHost host = RemoteHost.getLocalHost();
-
 		//load initialHGFiles
 		try {
 			initialHGFiles = loadSequenceFilesFromDirectory(inputDirName);
@@ -93,14 +93,13 @@ public class HMMSetEnhancer {
 			hmmFileNames = new String[initialHGFiles.length];
 			//create worker threads to create hmms
 			Thread[] hmmbuildThreads = new Thread[alignThreads];
-			System.out.println("Building HMMs for " + hmmFileNames.length 
+			logger.info("Building HMMs for " + hmmFileNames.length 
 					+ " sequences sets using "+ hmmbuildThreads.length + 
 			" threads.");
 			for(int i = 0; i < hmmbuildThreads.length; i++) {
 				hmmbuildThreads[i] = new Thread(new HMMBuildRunner());
 				hmmbuildThreads[i].setName("Build Thread " + i);
 				hmmbuildThreads[i].start();
-				//				System.out.println(hmmbuildThreads[i].getName() + " started");
 			}
 
 			//wait for worker threads to finish
@@ -112,8 +111,7 @@ public class HMMSetEnhancer {
 				}
 			}
 
-			System.out.println();
-			System.out.println("Done building HMMs");
+			logger.info("Done building HMMs");
 
 			//concatenate all hmms into a single hmm file
 			String hmmFileName = null;
@@ -134,7 +132,6 @@ public class HMMSetEnhancer {
 			}
 			hmmWriter.flush();
 			hmmWriter.close();
-
 
 			//prepend outgroupGenomeSequenceFiles to genomesequenceFiles
 			FastaSequenceFile[] allGenomes = new FastaSequenceFile[outgroupGenomeSequenceFiles.length + genomeSequenceFiles.length];
@@ -163,7 +160,7 @@ public class HMMSetEnhancer {
 				}
 			}
 
-			System.out.println("hmmsearch results have been collected");
+			logger.info("hmmsearch results have been collected");
 			//get hmm score sum for each genome
 			double[] hmmScoreSums = new double[hmmResultHolder.length];
 			for(int i = 0; i < hmmScoreSums.length; i++) {
@@ -171,7 +168,7 @@ public class HMMSetEnhancer {
 				for(int j = 0; j < hmmResultHolder[i].length; j++) {
 					hmmScoreSums[i] += hmmResultHolder[i][j].getScore();
 				}
-				System.out.println("hmm score sum for genome " + i + " " + 
+				logger.info("hmm score sum for genome " + i + " " + 
 						genomeSequenceFiles[i].getTaxa()[0] + ": "
 						+ hmmScoreSums[i]);
 			}
@@ -199,10 +196,10 @@ public class HMMSetEnhancer {
 			setRetainedOutgroups(retainedOutgroups);
 
 			//print out the outgroups being kept
-			System.out.println("outgroup genomes to keep: " + outgroupsToInclude);
+			logger.info("selected outgroup genomes: " + outgroupsToInclude);
 			for(int i = 0; i < keepOutgroup.length; i++) {
 				if(keepOutgroup[i]) {
-					System.out.println("keeping out group genome " + i + ": " 
+					logger.info("keeping outgroup genome " + i + ": " 
 							+ genomeSequenceFiles[i].getTaxa()[0] + 
 							" hmm score sum: " + hmmScoreSums[i]);
 				}
@@ -232,9 +229,7 @@ public class HMMSetEnhancer {
 				hmmResultHolder[i] = null;
 			}
 
-			System.out.println("sort...");
 			Arrays.sort(hmmResults);
-			System.out.println("hmmResults have been sorted");
 
 			//collect entries for each set until a duplicate from a 
 			//genome is found
@@ -264,21 +259,14 @@ public class HMMSetEnhancer {
 						//sequence file with duplicate entries. The duplicate
 						//entry files cause the homolog sets to be prematurely
 						//truncated and this is to correct for that problem.	
-						//						System.out.println("ignoring duplicate member from genome " 
-						//								+ genomeSequenceFiles[genomeIndex].getFileName());
+						logger.info("ignoring duplicate member from genome " 
+						+ genomeSequenceFiles[genomeIndex].getFileName());
 					} else {
 						//duplicate genome seen - stop collecting for this set
 						collectingForSet = false;
-						if(!genomeSeen[genomeIndex]) {
-							//	System.out.println("excluding " + 
-							//	hmmResults[i].toString() + " ** Top Hit **");
-						} else {
-							//System.out.println("excluding " + hmmResults[i].toString());
-						}
 					}
 				} else {
 					workingSet.add(hmmResults[i].getId());
-					//	System.out.println("including " + hmmResults[i].toString());
 				}
 				genomeSeen[genomeIndex] = true;
 				genomeScore[genomeIndex] = hmmResults[i].getScore();
@@ -308,7 +296,7 @@ public class HMMSetEnhancer {
 			setWriter.close();
 
 
-			System.out.println("create new homolog set files in " + outputDirName);
+			logger.info("creating new homolog set files in " + outputDirName);
 			//create directory for new homolog set sequence files
 			File outputDir = new File(outputDirName);
 			if(!outputDir.exists()) {
@@ -319,10 +307,9 @@ public class HMMSetEnhancer {
 			SequenceSetExtractor sse = 
 				new SequenceSetExtractor(setFile.getAbsolutePath(),
 						genomeSequenceFiles, outputDirName + "/set", "faa");
-			System.out.println("done creating new homolog set files");
+			logger.info("done creating new homolog set files");
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -339,7 +326,6 @@ public class HMMSetEnhancer {
 
 		ArrayList fileList = new ArrayList(files.length);
 
-		//			initialHGFiles = new FastaSequenceFile[24]; //for testing only
 		for(int i = 0; i < files.length; i++) {
 			FastaSequenceFile fsf = new FastaSequenceFile(files[i].getAbsolutePath());
 			if(fsf.getSequenceCount() >= minTaxa && fsf.getSequenceCount() <= maxTaxa) {
@@ -349,7 +335,6 @@ public class HMMSetEnhancer {
 		initialHGFiles = new FastaSequenceFile[fileList.size()];
 		fileList.toArray(initialHGFiles);
 
-		//		System.out.println("Homolog group seed sequence sets loaded: " + initialHGFiles.length);
 		return initialHGFiles;
 	}
 
@@ -454,26 +439,16 @@ public class HMMSetEnhancer {
 	}
 
 	private class HMMBuildRunner implements Runnable {
-		private RemoteHost host = RemoteHost.getLocalHost();
-
 		public void run() {
-			String hmmbuildPath = host.getCommandPath("hmmbuild");
+			String hmmbuildPath = ExecUtilities.getCommandPath("hmmbuild");
 
 			//get sequence set file to work on
 			int setIndex = getNextSetIndex();
 			while(setIndex >= 0 && setIndex < initialHGFiles.length) {
-				//				align sequence set
-				//				System.out.println(Thread.currentThread().getName() + " aligning set " + setIndex);
-				//				System.out.println(Thread.currentThread().getName() + " aligning set " + setIndex + ": " + initialHGFiles[setIndex].getFullName());
-				//								System.out.println(initialHGFiles[setIndex].toString());
+				//align sequence set
 				MultipleSequenceAligner msa = new MultipleSequenceAligner();
 				SequenceAlignment alignment = 
 					msa.getMSA(initialHGFiles[setIndex]);
-				//				System.out.println(Thread.currentThread().getName() + 
-				//						" done aligning set " + setIndex); 
-				//				System.out.println("done aligning set " 
-				//						+ setIndex + ": " +
-				//						initialHGFiles[setIndex].getFullName());
 
 				//run hmmbuild on alignment to create an hmm
 				//create alignment file
@@ -496,9 +471,7 @@ public class HMMSetEnhancer {
 				String hmmbuildCmd = hmmbuildPath + " --informat afa " +
 				hmmFileName + " " + alignmentFileName;
 
-				//				System.out.println(Thread.currentThread().getName() + " " + hmmbuildCmd);
-				host.executeCommand(hmmbuildCmd);
-				//				System.out.println("done: " + hmmbuildCmd);
+				ExecUtilities.exec(hmmbuildCmd);
 
 				//delete alignment now
 				new File(alignmentFileName).delete();
@@ -506,14 +479,12 @@ public class HMMSetEnhancer {
 				hmmFileNames[setIndex] = hmmFileName;
 				setIndex = getNextSetIndex();
 			}
-			//			System.out.println("********** Thread " + Thread.currentThread().getName() + " is done");
 		}
 	}
 
 	private class HMMSearchRunner implements Runnable {
 
 		private String hmmFileName;
-		private RemoteHost host = RemoteHost.getLocalHost();
 		private TextFile[] resultHolder;
 		private HMMResult[][] hmmResultHolder; 
 
@@ -531,7 +502,7 @@ public class HMMSetEnhancer {
 					String outfileName = "";
 					File f = File.createTempFile("hmmsearch_", ".out", new File(System.getProperty("user.dir")));
 					outfileName = f.getAbsolutePath();
-					String hmmsearchPath = host.getCommandPath("hmmsearch");
+					String hmmsearchPath = ExecUtilities.getCommandPath("hmmsearch");
 
 					// "-o /dev/null" redirects main output so it doesn't go 
 					//to stdout. I am using the tblout results, so I don't
@@ -542,7 +513,7 @@ public class HMMSetEnhancer {
 					+ genomeSequenceFiles[genomeIndex].getFile().getPath();
 
 					System.out.println(hmmsearchCmd);
-					host.executeCommand(hmmsearchCmd);
+					ExecUtilities.exec(hmmsearchCmd);
 					TextFile resultFile =  new TextFile(outfileName);
 					resultHolder[genomeIndex] = resultFile;
 					HMMResult[] hmmResults = getHMMResults(resultFile);
@@ -570,21 +541,6 @@ public class HMMSetEnhancer {
 			
 			r = new HMMResult[hmmResults.size()];
 			hmmResults.toArray(r);
-//			int resultCount = resultLines.length -3; 
-//			//-3 because first 3 lines of hmmsearch output do not contain results
-//			if(resultLines[resultLines.length-1].length() <2 ) {
-//				resultCount--; //last line in file is blank
-//			}
-//
-//			if(resultCount < 0) {
-//				System.out.println("HMMSetEnhancer.getHMMResults() result count is negative (" + resultCount + ") for file " + resultFile.getFile().getName());
-//				r = new HMMResult[0];
-//			} else {
-//				r = new HMMResult[resultCount];
-//				for(int i = 0; i < r.length; i++) {
-//					r[i] = new HMMResult(resultLines[i+3]);
-//				}
-//			}
 
 			return r;
 		}
