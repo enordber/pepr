@@ -33,7 +33,6 @@
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/pepr/lib"/>
 
-<<<<<<< HEAD
     <!-- Put everything in ${build} into the pepr.jar file -->
     <jar jarfile="${dist}/pepr/lib/pepr.jar" basedir="${build}"/>
 
@@ -43,20 +42,6 @@
     </copy>
     
     <copy todir="${dist}/pepr/bin">
-=======
-    <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-    <jar jarfile="${dist}/pepr/lib/pepr-${DSTAMP}.jar" basedir="${build}"/>
-
-    <copy todir="${dist}/pepr/bin">
-      <fileset dir="${bin}"/>
-    </copy>
-    
-    <copy todir="${dist}/pepr/bin_mac">
-      <fileset dir="${bin}_mac"/>
-    </copy>
-    
-    <copy todir="${dist}/pepr/bin_linux">
->>>>>>> refs/remotes/origin/master
       <fileset dir="${bin}_linux"/>
     </copy>
     
