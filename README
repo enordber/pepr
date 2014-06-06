@@ -11,7 +11,9 @@ FastTree, all third-party tools are unaltered. FastTree was modified, with assis
 from its author, Morgan Price, in order to use the WAG likelihood matrix, rather than
 the default JTT matrix.
 
-
+Note that blat is only available for "personal, academic, and non-profit use". If your 
+use does not fit this description, you must use the blast option, rather than the blat 
+option.
 
 FastTree
         http://www.microbesonline.org/fasttree/ - “FastTree is open source software -- 
