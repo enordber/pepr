@@ -41,10 +41,6 @@ public class BlatRunner {
 	private static int defaultHitsPerQuery = 1;
 	private String[] sortedIds;
 	
-	//useSW determines if smith-waterman alignment scores should be calculated
-	//for all hit pairs before filtering for the top hits
-	private boolean useSW = false;
-
 
 	public static void main(String[] args) {
 		CommandLineProperties commandLineProperties = 
@@ -437,15 +433,7 @@ public class BlatRunner {
 					ExecUtilities.exec(blatCommand);
 					TextFile resultFile = null;
 					try {
-						if(useSW) {
-							//pre-filter to limit the number of pairs per query
-//							resultFile = new TextFile(outputName); 							
-//							outputName = filterForTopHits(resultFile, 10);
-							resultFile = 
-								getSWScoresForHits(outputName, concatenatedSequenceName);
-						} else {
-							resultFile = new TextFile(outputName); 							
-						}
+						resultFile = new TextFile(outputName); 							
 						outputName = filterForTopHits(resultFile, hitsPerQuery);
 						resultFile = new TextFile(outputName);
 						setBlatOutput(resultFile, querySetIndex, index);
@@ -461,38 +449,6 @@ public class BlatRunner {
 			}
 		}
 
-		private TextFile getSWScoresForHits(String pairFileName, String seqFileName) {
-			TextFile r = null;
-//			System.out.println(">getSWScoresForHits() " + 
-//					pairFileName + " " + seqFileName + " " + 
-//					Thread.currentThread().getName());
-			String outFileName = pairFileName + ".sw";
-			String[] alignerCommands = new String[]{
-					"-" + HandyConstants.FILE,
-					pairFileName,
-					"-" + HandyConstants.SEQ_FILE_NAME,
-					seqFileName, 
-					"-" + HandyConstants.SCORE_COL,
-					"11",
-					"-" + HandyConstants.M8,
-					outFileName,
-					"-" + HandyConstants.BANDED,
-					HandyConstants.TRUE, 
-					"-" + HandyConstants.BAND_WIDTH,
-					"32"
-			};
-			AAPairAligner aligner = new AAPairAligner(alignerCommands);
-			aligner.run();
-			try {
-				r = new TextFile(outFileName);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-//			System.out.println("<getSWScoresForHits() " + Thread.currentThread().getName());
-			return r;
-		}
-
 		/**
 		 * Filters the result file for the correct number of top hits
 		 * per query per target genome. A new output file is written, and 
@@ -506,10 +462,6 @@ public class BlatRunner {
 			forFilteredFileName.deleteOnExit();
 			String r = forFilteredFileName.getName();
 			FileWriter fw = new FileWriter(r);
-//			System.out.println("BlatRunner.filterForTopHits() allowing "
-//					+ topHits + " hits");
-//			System.out.println("filtered file: " + 
-//					forFilteredFileName.getAbsolutePath());
 			int lineCount = resultFile.getLineCount();
 
 			/*

@@ -32,13 +32,6 @@ public class BlastRunner {
 	private String runName;
 	private boolean blastn = false;
 	
-	//blast params
-//	private String 
-
-	//useSW determines if smith-waterman alignment scores should be calculated
-	//for all hit pairs before filtering for the top hits
-	private boolean useSW = false;
-
 	//first dimension is index of the RemoteHost. second dimension is
 	//index of the sequenceSet. if true, it means this sequence set has
 	//been formatted using formatdb on the host
@@ -583,15 +576,7 @@ public class BlastRunner {
 
 					TextFile resultFile = null;
 					try {
-						if(useSW) {
-							//pre-filter to limit the number of pairs per query
-//							resultFile = new TextFile(outputName); 							
-//							outputName = filterForTopHits(resultFile, 10);
-							resultFile = 
-								getSWScoresForHits(outputName, concatenatedSequenceName);
-						} else {
-							resultFile = new TextFile(outputName); 							
-						}
+						resultFile = new TextFile(outputName); 							
 						setBlastOutput(resultFile, querySetIndex, index);
 
 					} catch(IOException ioe) {
@@ -692,15 +677,7 @@ public class BlastRunner {
 					
 					TextFile resultFile = null;
 					try {
-						if(useSW) {
-							//pre-filter to limit the number of pairs per query
-//							resultFile = new TextFile(outputName); 							
-//							outputName = filterForTopHits(resultFile, 10);
-							resultFile = 
-								getSWScoresForHits(outputName, concatenatedSequenceName);
-						} else {
-							resultFile = new TextFile(outputName); 							
-						}
+						resultFile = new TextFile(outputName); 							
 						setBlastOutput(resultFile, querySetIndex, index);
 
 					} catch(IOException ioe) {
@@ -714,34 +691,7 @@ public class BlastRunner {
 		}
 
 	}
-	private TextFile getSWScoresForHits(String pairFileName, String seqFileName) {
-		TextFile r = null;
-		String outFileName = pairFileName + ".sw";
-		System.out.println("outFileName: " + outFileName);
-		String[] alignerCommands = new String[]{
-				"-" + HandyConstants.FILE,
-				pairFileName,
-				"-" + HandyConstants.SEQ_FILE_NAME,
-				seqFileName, 
-				"-" + HandyConstants.SCORE_COL,
-				"11",
-				"-" + HandyConstants.M8,
-				outFileName,
-				"-" + HandyConstants.BANDED,
-				HandyConstants.TRUE, 
-				"-" + HandyConstants.BAND_WIDTH,
-				"32"
-		};
-		AAPairAligner aligner = new AAPairAligner(alignerCommands);
-		aligner.run();
-		try {
-			r = new TextFile(outFileName);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return r;
-	}
-
+	
 	public void setRunName(String name) {
 		runName = name;
 	}
