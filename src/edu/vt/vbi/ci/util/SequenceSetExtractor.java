@@ -26,7 +26,6 @@ import edu.vt.vbi.ci.util.file.TextFile;
  */
 public class SequenceSetExtractor {
 
-	private boolean debug = false;
 	/*
 	 * Command line options.
 	 */
@@ -109,7 +108,6 @@ public class SequenceSetExtractor {
 
 	public SequenceSetExtractor(String[] args) {
 		CommandLineProperties clp = new CommandLineProperties(args);
-		//		readParameters(args);
 
 		outputBaseName = clp.getValues(OUTPUT_BASE_CMD)[0];
 		outputFileExtension = clp.getValues(OUTPUT_EXT_CMD)[0]; 
@@ -117,14 +115,10 @@ public class SequenceSetExtractor {
 		String ogFileName = clp.getValues(OG_FILE_CMD, "")[0];
 		boolean useOGFile = false;
 		if(setFileName.equals("")) {
-			System.out.println("use OG file: " + ogFileName);
 			setFileName = ogFileName;
 			useOGFile = true;
 		}
 		String[] seqFileNames = clp.getValues(SEQUENCE_FILE_CMD);
-		for(int i = 0; i < seqFileNames.length; i++) {
-			System.out.println("file " + i + ": " + seqFileNames[i]);
-		}
 
 		groupDefinitions = getFileLines(setFileName);
 
@@ -166,8 +160,6 @@ public class SequenceSetExtractor {
 			String delimiter = "\t";
 			//for each set, 
 			for(int set = 0; set < groupDefinitions.length; set++) {
-				//System.out.println();
-				//System.out.print("set " + set + "  ");
 				//get the list of ids for the set by parsing the set line
 				String[] setIds = groupDefinitions[set].split(delimiter);
 				if(setIds.length >= minSetSize && setIds.length <= maxSetSize) {
@@ -210,15 +202,12 @@ public class SequenceSetExtractor {
 	 * will be the name of the OG.
 	 */
 	private void processOGSequenceSets(int minSetSize, int maxSetSize) {
-		System.out.println(">processOGSequenceSets()");
 		try {
 			String delimiter = "\t";
 			String openParen = "(";
 			//for each set, 
 			for(int set = 0; set < groupDefinitions.length; set++) {
 				delimiter = "\t";
-				//System.out.println();
-				//System.out.print("set " + set + "  ");
 				//get the list of ids for the set by parsing the set line
 				String[] setIds = groupDefinitions[set].split(delimiter);
 				int endIndex = setIds[0].indexOf(openParen);
@@ -232,9 +221,6 @@ public class SequenceSetExtractor {
 					delimiter = "\\s+";
 					String memberString = setIds[1].trim();
 					setIds = memberString.split(delimiter);
-//					System.out.println("working on set " + set + ": " + ogName
-//							+ ". members: " + setIds.length + " from: " +
-//							memberString);
 					if(setIds.length > 1 && setIds.length + 1 >= minSetSize &&
 							setIds.length + 1 <= maxSetSize) {
 						//create a file for output
@@ -242,7 +228,6 @@ public class SequenceSetExtractor {
 						"_" + set + "." + 
 						outputFileExtension;
 						FileWriter fw = new FileWriter(fileName);
-//						System.out.println("creating file: " + fileName);
 						//search for each id in the set in the fasta files
 						for(int id = 0; id < setIds.length; id++) {
 							//check each FastaFile until a match is found, or
@@ -255,7 +240,6 @@ public class SequenceSetExtractor {
 							}
 							String seqId  = 
 								setIds[id].substring(0, endIndex).trim();
-							//						System.out.println("$$%#$%% look for " + seqId);
 							String[] seq = null;
 							seq = getSequenceByQuickLookup(seqId);
 							for(int file = 0; 
@@ -265,13 +249,10 @@ public class SequenceSetExtractor {
 							}
 							//				print the sequence to the output file
 							if(seq != null) {
-								//							System.out.println("sequence found");
 								for(int i = 0; i < seq.length; i++) {
 									fw.write(seq[i]);
 									fw.write("\n");
 								}
-							} else {
-								//							System.out.println("sequence not found");
 							}
 						}
 
@@ -283,7 +264,6 @@ public class SequenceSetExtractor {
 		} catch(IOException ioe) {
 			ioe.printStackTrace();
 		}
-		System.out.println("<processOGSequenceSets()");
 	}
 
 	/**
@@ -397,20 +377,11 @@ public class SequenceSetExtractor {
 	 * to a sequence file index and sequence index within that file.
 	 */
 	private void buildSequenceIndexMap() {
-		if(debug) {
-		    System.out.println(">buildSequenceIndexMap()");
-		}
 		sequenceIndexMap = new HashMap();
 		//go through each file
 		for(int i = 0; i < sequenceFiles.length; i++) {
-			if(debug) {
-			    System.out.println("load sequences from " + sequenceFiles[i].getName());
-			}
 			//get titles for file
 			String[] titles = sequenceFiles[i].getTitles();
-			if(debug) {
-			    System.out.println("Sequences in file: " + titles.length) ;
-			}
 			for(int j = 0; j < titles.length; j++) {
 				//get token for the title
 				String token = FastaSequenceFile.getIDToken(titles[j]);
