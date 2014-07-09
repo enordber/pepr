@@ -1,8 +1,5 @@
 package edu.vt.vbi.ci.util;
-import java.io.IOException;
 import java.io.Serializable;
-import java.nio.IntBuffer;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -16,12 +13,8 @@ public class IntList implements Serializable {
 	private int   size;
 	private int   initCapacity;
 
-	private boolean awake = true;
-
 	//when sorted, search operations can be sped up using Arrays.binarySearch()
 	private boolean sorted = false;
-	;
-	private transient IntBuffer ib;
 
 	/**
 	 *  Creates a new IntList. The default initial
@@ -68,7 +61,7 @@ public class IntList implements Serializable {
 	 *  @param int
 	 */
 	public final void add(int newInt) {
-		
+
 		if (size + 1 >= intArray.length) {
 			int increase = 0;
 
@@ -106,7 +99,7 @@ public class IntList implements Serializable {
 		}
 		sorted = false;
 	}
-	
+
 	/**
 	 * Makes sure the underlying int[] is at least large enough
 	 * to hold the specified number of ints. 
@@ -133,11 +126,7 @@ public class IntList implements Serializable {
 			return;
 		}
 
-		if(awake) {
-			intArray[index] = value;
-		} else {
-			ib.put(index, value);
-		}
+		intArray[index] = value;
 		sorted = false;
 	}
 
@@ -154,12 +143,7 @@ public class IntList implements Serializable {
 			return;
 		}
 
-		if(awake) {
-			System.arraycopy(values, 0, intArray, index, values.length);
-		} else {
-			ib.position(index);
-			ib.put(values, 0, values.length);
-		}
+		System.arraycopy(values, 0, intArray, index, values.length);
 		for (int i = 0; i < values.length; i++) {
 			intArray[index + i] = values[i];
 		}
@@ -259,11 +243,7 @@ public class IntList implements Serializable {
 		if ((index >= size) || (index < 0)) {
 			throw new ArrayIndexOutOfBoundsException(index);
 		} else {
-			if(awake) {
-				r = intArray[index];
-			} else {
-				r = ib.get(index);
-			}
+			r = intArray[index];
 		}
 
 		return r;
@@ -285,12 +265,7 @@ public class IntList implements Serializable {
 
 		int[] r = new int[length];
 
-		if(awake) {
-			System.arraycopy(intArray, index, r, 0, length);
-		} else {
-			ib.position(index);
-			ib.get(r, 0, length);
-		}
+		System.arraycopy(intArray, index, r, 0, length);
 
 		return r;
 	}
@@ -320,7 +295,7 @@ public class IntList implements Serializable {
 			//when sorted, binary search is used for firstIndexOf(). 
 			//This requires the actual int[] to be kept in sorted order,
 			//otherwise the binary search may not work. To make sure this
-		//	happens, any values after the end of the list should be set to 
+			//	happens, any values after the end of the list should be set to 
 			//Integer.MAX_VALUE
 			intArray[size] = Integer.MAX_VALUE;
 		}
@@ -458,16 +433,12 @@ public class IntList implements Serializable {
 	 */
 	public final void trimToSize() {
 
-		if(awake) {
-			if(intArray.length > size) {
-				int[] newArray = new int[size];
+		if(intArray.length > size) {
+			int[] newArray = new int[size];
 
-				System.arraycopy(intArray, 0, newArray, 0, size);
+			System.arraycopy(intArray, 0, newArray, 0, size);
 
-				intArray = newArray;
-			}
-		} else {
-
+			intArray = newArray;
 		}
 	}
 
