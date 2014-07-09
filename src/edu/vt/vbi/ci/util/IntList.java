@@ -5,9 +5,6 @@ import java.nio.IntBuffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-
-
-
 /**
  *  A class for storing and manipulating an
  *  ordered list of ints.
@@ -181,10 +178,6 @@ public class IntList implements Serializable {
 			return;
 		}
 
-		boolean wasAwake = awake;
-		if(!awake) {
-			wake();
-		}
 		if (size + 1 >= intArray.length) {
 			int increase = 0;
 
@@ -211,13 +204,6 @@ public class IntList implements Serializable {
 
 		size++;
 
-		if(!wasAwake) {
-			try {
-				hibernate();
-			} catch(IOException ioe) {
-				//Debug.stackTrace(Debug.UTILITIES, ioe);
-			}
-		}
 		sorted = false;
 	}
 
@@ -509,128 +495,5 @@ public class IntList implements Serializable {
 	public final void clear() {
 		intArray = new int[initCapacity];
 		size     = 0;
-
-		//call hibernate if IntList is currently hibernating - 
-		// this will release the current IntBuffer and create
-		// a new IntBuffer of size zero.
-		if(!awake) {
-			awake = true; //need to set awake to true, or hibernate will do nothing
-
-			try {
-				hibernate();
-			} catch(IOException ioe) {
-				//Debug.stackTrace(Debug.UTILITIES, ioe);
-			}
-		}
-	}
-
-	//hibernation-related methods
-	/**
-	 * Stores the backing int[] in a file, thereby
-	 * freeing RAM. Most methods will be much slower
-	 * while hibernating. Call wake() before calling 
-	 * other methods if perfomance will be critical.
-	 */
-	public void hibernate() throws IOException {
-		//	Debug.msg(Debug.ENTRY_EXIT, Debug.UTILITIES, ">IntList.hibernate()");
-		/*	if(awake) {
-    		//get ByteBuffer with length = intArray.length * 4, because 4 bytes/int
-            ByteBuffer bb = BackingFileManager.getByteBuffer(intArray.length * 4);
-    		bb.position(0);
-    		ib = bb.asIntBuffer();
-    		ib.position(0);
-    		ib.put(intArray);
-    		intArray = null;	
-    		awake = false;
-    	}*/
-		//Debug.msg(Debug.ENTRY_EXIT, Debug.UTILITIES, "<IntList.hibernate()");	
-	}
-
-	/**
-	 * Reads the underlying int[] from the cahce file. When in
-	 * the awake state, operations on the IntList will be
-	 * faster, but the memory used will be greater.
-	 *
-	 */
-	public void wake() {
-		//Debug.msg(Debug.ENTRY_EXIT, Debug.UTILITIES, ">IntList.wake()");
-		/*	if(!awake) {
-    	    	if(ib != null) {
-    	    		ib.position(0);
-    	    		intArray = new int[ib.remaining()];
-    	    		ib.get(intArray);
-    	    		ib.clear();
-    	    		ib = null;
-    	    	}
-     	}   	
-    	awake = true;*/
-		//Debug.msg(Debug.ENTRY_EXIT, Debug.UTILITIES, "<IntList.wake()");
-	}
-
-	/**
-	 * Returns true if this IntList is currently 'awake',
-	 * as opposed to 'hibernating'. When hibernating, the
-	 * underlying list of ints is stored in a file. When
-	 * awake, the underlying list of ints is stroed in 
-	 * active memory. Most operations can be performed
-	 * in both states (soon all operations, but the 
-	 * implementation is not complete yet). Operations
-	 * should be significantly faster when awake, but the
-	 * list is far more memory efficient when hibernating.
-	 * 
-	 * @return true is awake, false if hibernating
-	 */
-	public boolean isAwake() {
-		return awake;
-	}
-
-	/**
-	 * Serialization method. Writes neccessary information
-	 * about this object to the output stream.
-	 * 
-	 * @param out
-	 * @throws IOException
-	 */
-	private void writeObject(java.io.ObjectOutputStream out) throws IOException
-	{
-		boolean wasAwake = awake;
-		if(!awake) {
-			//wake up to serialize
-			wake();
-		}
-		awake = wasAwake;
-		out.defaultWriteObject();
-
-		if(!wasAwake) {
-			//restore proper hibernation state
-			awake = false;
-			hibernate();
-		}
-	}
-
-	/**
-	 * Deserialization method. Restores object using data
-	 * from the input stream.
-	 * 
-	 * @param in
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 */
-	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException
-	{
-		//restore the IntList
-		in.defaultReadObject();
-
-		if(!awake) {
-			//restore proper hibernation state
-			awake = true;
-			hibernate();
-		}
 	}
 }
-
-
-/*--- Formatted in Sun Java Convention Style on Fri, May 13, '05 ---*/
-
-
-/*------ Formatted by Jindent 3.24 Gold 1.02 --- http://www.jindent.de ------*/
