@@ -42,56 +42,8 @@ import edu.vt.vbi.ci.util.file.TextFile;
  */
 public class PhyloPipeline {
 
-	/*
-	 * Commands/Values needed, to be defined in HandyConstants:
-	 * BLAST
-	 * BLAT
-	 * Smith-Waterman
-	 * Banded Smith-Waterman
-	 * Parsimony with Branch lengths
-	 * Parsimony
-	 * Maximum Likelihood
-	 * FastTree
-	 * min taxa
-	 * min taxa multiplier - used instead of specific min taxa
-	 * max taxa
-	 * target taxa
-	 * target min gene count
-	 * Bootstrap reps
-	 * Gene wise Jackknife reps
-	 * Full tree method
-	 * Support tree method (applies to bootstrap or jackknife)
-	 * align threads
-	 * tree threads
-	 * full tree threads
-	 * Blast/Blat threads
-	 * Bidirectional hit filter
-	 * MCL inflation value
-	 * Matrix evaluation
-	 * track - shortcuts to a set of parameter values
-	 */
 
-	/*
-	 * Programs that are needed. A check should be run for each of these before
-	 * the pipeline starts working. If any critical programs are not found,
-	 * a message should be printed telling the user what programs are missing
-	 * and that they need to be added to the PATH. I expect the PATH to be 
-	 * properly set up by a perl wrapper, but it may not work, or someone may
-	 * run the java code independent of the perl script.
-	 * 
-	 * blastall
-	 * formatdb
-	 * blat
-	 * mcl
-	 * Gblocks
-	 * raxmlHPC
-	 * raxmlHPC-PTHREADS
-	 * muscle
-	 * FastTree_LG
-	 * 
-	 */
-
-	private static Logger logger;
+	private static final Logger logger = Logger.getLogger("PEPR");
 	private static HashMap<String,String> commands;
 	private static long startTime;	
 	static{
@@ -134,10 +86,8 @@ public class PhyloPipeline {
 		runName = "pepr-" + System.currentTimeMillis();
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
 
-		System.out.println("configure logger");
 		//set log file name, based on run name, if it has not already been set
 		System.setProperty("logfile.name",System.getProperty("logfile.name", runName + ".log"));
-		logger = Logger.getLogger("PEPR");
 		logger.info("Starting " + new Date());
 		System.out.println("logger configured with log file name '" + runName + ".log'");
 		System.out.println("logger: " + logger);
@@ -180,7 +130,6 @@ public class PhyloPipeline {
 						confFileName);
 				logger.log(Level.DEBUG, "Problem trying to load configuration file: " +
 						confFileName);
-				e.printStackTrace();
 				logger.log(Level.DEBUG,e.getMessage());
 			}
 			clp.remove("-"+HandyConstants.CONF_FILE_COMMAND);
@@ -365,9 +314,6 @@ public class PhyloPipeline {
 				e.printStackTrace();
 			}
 		}
-
-		//If called for, do Smith-Waterman alignments of pairs from 
-		//Blast or Blat results
 
 		//Create input file for MCL: ID1	ID2	score
 
@@ -589,9 +535,9 @@ public class PhyloPipeline {
 	private FastaSequenceFile[] filterOutDuplicateGenera(
 			FastaSequenceFile[] homologySearchSequenceFiles) {
 		FastaSequenceFile[] r = null;
-		ArrayList keepFiles = new ArrayList(homologySearchSequenceFiles.length/2);
+		ArrayList<FastaSequenceFile> keepFiles = new ArrayList(homologySearchSequenceFiles.length/2);
 		//speciesKept stores each species name being kept
-		HashMap generaKept = new HashMap();
+		HashMap<String, FastaSequenceFile> generaKept = new HashMap();
 		Pattern spacePat = Pattern.compile("_");
 		for(int i = 0; i < homologySearchSequenceFiles.length; i++) {
 			String taxon = homologySearchSequenceFiles[i].getTaxa()[0];
@@ -1131,7 +1077,6 @@ public class PhyloPipeline {
 				"Proportion of max_taxa to be used as a minimum taxa value. Sequence sets with fewer taxa are not included in tree building. Default is 0.8");
 		commands.put(HandyConstants.TRACK, "\tSpecify a pre-defined track (set of options) to use. Tracks are identified by the sequence similarity search program used and the tree-building program used. Track options are:\n" +
 				"\t\t\t\t\t\tblat_fast\n\t\t\t\t\t\tblast_fast\n\t\t\t\t\t\tblat_raxml\n\t\t\t\t\t\tblast_raxml");
-		//		commands.put(HandyConstants.HELP, "\tPrint this help.");
 	}
 
 	/**

@@ -23,62 +23,62 @@ public class AlignmentUtilities {
 	
 	//The S' needed to get a certain E value is:
 	//S' = 1/log2(E/mn)
-	public final static String BLOSUM_62 = "BLOSUM62";
-	public final static String AMINO_ACID = "Amino Acid";
-	public final static String NUCLEIC_ACID = "Nucleic Acid";
+	public static final String BLOSUM_62 = "BLOSUM62";
+	public static final String AMINO_ACID = "Amino Acid";
+	public static final String NUCLEIC_ACID = "Nucleic Acid";
 	// A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  B  Z  X
 
 	//Amino Acid constants
-	public final static int A = 0;
-	public final static int R = 1;
-	public final static int N = 2;
-	public final static int D = 3;
-	public final static int C = 4;
-	public final static int Q = 5;
-	public final static int E = 6;
-	public final static int G = 7;
-	public final static int H = 8;
-	public final static int I = 9;
-	public final static int L = 10;
-	public final static int K = 11;
-	public final static int M = 12;
-	public final static int F = 13;
-	public final static int P = 14;
-	public final static int S = 15;
-	public final static int T = 16;
-	public final static int W = 17;
-	public final static int Y = 18;
-	public final static int V = 19;
-	public final static int B = 20;
-	public final static int Z = 21;
-	public final static int X = 22;
-	public final static int GAP = 23;
+	public static final int A = 0;
+	public static final int R = 1;
+	public static final int N = 2;
+	public static final int D = 3;
+	public static final int C = 4;
+	public static final int Q = 5;
+	public static final int E = 6;
+	public static final int G = 7;
+	public static final int H = 8;
+	public static final int I = 9;
+	public static final int L = 10;
+	public static final int K = 11;
+	public static final int M = 12;
+	public static final int F = 13;
+	public static final int P = 14;
+	public static final int S = 15;
+	public static final int T = 16;
+	public static final int W = 17;
+	public static final int Y = 18;
+	public static final int V = 19;
+	public static final int B = 20;
+	public static final int Z = 21;
+	public static final int X = 22;
+	public static final int GAP = 23;
 
 	//Amino Acid bit mask constants
-	public final static int A_MASK = 0;
-	public final static int R_MASK = 1 << 0;
-	public final static int N_MASK = 1 << 1;
-	public final static int D_MASK = 1 << 2;
-	public final static int C_MASK = 1 << 3;
-	public final static int Q_MASK = 1 << 4;
-	public final static int E_MASK = 1 << 5;
-	public final static int G_MASK = 1 << 6;
-	public final static int H_MASK = 1 << 7;
-	public final static int I_MASK = 1 << 8;
-	public final static int L_MASK = 1 << 9;
-	public final static int K_MASK = 1 << 10;
-	public final static int M_MASK = 1 << 11;
-	public final static int F_MASK = 1 << 12;
-	public final static int P_MASK = 1 << 13;
-	public final static int S_MASK = 1 << 14;
-	public final static int T_MASK = 1 << 15;
-	public final static int W_MASK = 1 << 16;
-	public final static int Y_MASK = 1 << 17;
-	public final static int V_MASK = 1 << 18;
-	public final static int B_MASK = 1 << 19;
-	public final static int Z_MASK = 1 << 20;
-	public final static int X_MASK = 1 << 21;
-	public final static int GAP_MASK = 1 << 22;
+	public static final int A_MASK = 0;
+	public static final int R_MASK = 1 << 0;
+	public static final int N_MASK = 1 << 1;
+	public static final int D_MASK = 1 << 2;
+	public static final int C_MASK = 1 << 3;
+	public static final int Q_MASK = 1 << 4;
+	public static final int E_MASK = 1 << 5;
+	public static final int G_MASK = 1 << 6;
+	public static final int H_MASK = 1 << 7;
+	public static final int I_MASK = 1 << 8;
+	public static final int L_MASK = 1 << 9;
+	public static final int K_MASK = 1 << 10;
+	public static final int M_MASK = 1 << 11;
+	public static final int F_MASK = 1 << 12;
+	public static final int P_MASK = 1 << 13;
+	public static final int S_MASK = 1 << 14;
+	public static final int T_MASK = 1 << 15;
+	public static final int W_MASK = 1 << 16;
+	public static final int Y_MASK = 1 << 17;
+	public static final int V_MASK = 1 << 18;
+	public static final int B_MASK = 1 << 19;
+	public static final int Z_MASK = 1 << 20;
+	public static final int X_MASK = 1 << 21;
+	public static final int GAP_MASK = 1 << 22;
 
 	private static final char[] aaTranslate = 
 		new char[]{'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K',
@@ -87,10 +87,10 @@ public class AlignmentUtilities {
 	/*
 	 *Nucleotide constants 
 	 */
-	public final static int naA = 0;
-	public final static int naT = 1;
-	public final static int naG = 2;
-	public final static int naC = 3;
+	public static final int naA = 0;
+	public static final int naT = 1;
+	public static final int naG = 2;
+	public static final int naC = 3;
 	
 	private static final char[] naTranslate = 
 		new char[]{'A', 'T', 'G', 'C'};
@@ -140,7 +140,6 @@ public class AlignmentUtilities {
 				r[rIndex] = naC;
 				rIndex++;
 				break;
-
 			}
 		}
 		if(rIndex < r.length) {

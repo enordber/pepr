@@ -15,28 +15,6 @@ public class TreeSupportDecorator {
 	private static final String SUPPORT = "support";
 	private static final String NONE = "none";
 	
-	public static void main(String[] args) {
-	    CommandLineProperties clp = new CommandLineProperties(args);
-	    String mainTreeFileName = clp.getValues(MAIN, NONE)[0];
-	    String[] supportTreeFileNames = clp.getValues(SUPPORT, NONE);
-	    
-	    //load tree strings from files
-	    try {
-			String mainTree = new TextFile(mainTreeFileName).toString().trim();
-			
-			String[] supportTrees = new String[supportTreeFileNames.length];
-			for(int i = 0; i < supportTrees.length; i++) {
-				supportTrees[i] = new TextFile(supportTreeFileNames[i]).toString().trim();
-			}
-			
-			String decoratedTree = addSupportValues(mainTree, supportTrees);
-			System.out.println(decoratedTree);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
 	/**
 	 * Adds support values to the mainTree based on the presence of
 	 * bipartitions in the supportTrees. All tree should have the 
@@ -68,7 +46,6 @@ public class TreeSupportDecorator {
 		//biparts are present in the support tree
 
 		HashSet mainTreeBiparts = mainTree.getBipartitionTaxa(taxaMap);
-
 
 		return r;
 	}
@@ -135,10 +112,6 @@ public class TreeSupportDecorator {
 		int[] bipartSupportCounts = new int[mainTreeBiparts.length];
 		for(int i = 0; i < bipartSupportCounts.length; i++) {
 			bipartSupportCounts[i] = supportTreeBipartSet.getCount(mainTreeBiparts[i]);
-//			if(mainTreeBiparts[i].getSmallerSide().cardinality() >= 1) {
-//				System.out.println(mainTreeBiparts[i].getString()
-//						+ "\t" + bipartSupportCounts[i] + " of " + supportTrees.length);
-//			}
 		}
 
 		//add support values to the main tree

@@ -16,12 +16,13 @@ import edu.vt.vbi.ci.util.file.TextFile;
 
 public class PhylogeneticTreeRefiner {
 
-	private Logger logger;
 	private HashMap taxonToFileName;
 	private CommandLineProperties clp;
 	private HashSet refinedSubsets;
 	private String runName;
-	int refineRound = 0;
+	private int refineRound = 0;
+	private static Logger logger = Logger.getLogger(PhylogeneticTreeRefiner.class);
+
 
 	public static void main(String[] args) {
 		CommandLineProperties clp = new CommandLineProperties(args);
@@ -30,7 +31,7 @@ public class PhylogeneticTreeRefiner {
 		String[] inputSequenceFileNames = 
 			clp.getValues(HandyConstants.GENOME_FILE);
 		if(inputSequenceFileNames == null) {
-			System.out.println("No input sequence files were provided. " +
+			logger.error("No input sequence files were provided. " +
 					"Please provide sequence files with the command -"
 					+ HandyConstants.GENOME_FILE);
 		}
@@ -62,15 +63,13 @@ public class PhylogeneticTreeRefiner {
 				new PhylogeneticTreeRefiner(initialTree, clp, 
 						inputSequenceFiles, outgroupSequenceFiles);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 	}
 
 	public PhylogeneticTreeRefiner(String initialTree, 
 			CommandLineProperties clp, FastaSequenceFile[] ingroupSequences, 
 			FastaSequenceFile[] outgroupSequences) {
-		logger = Logger.getLogger("PhylogeneticTreeRefiner");
 		this.clp = clp;
 
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
@@ -112,7 +111,6 @@ public class PhylogeneticTreeRefiner {
 		String[] outgroupList = new String[outgroupTaxa.size()];
 		outgroupTaxa.toArray(outgroupList);
 		AdvancedTree tree = new AdvancedTree(initialTree);
-//		System.out.println("initialTree after parsing: " + tree.getTreeString(true, true));
 		tree.setOutGroup(outgroupList);
 
 		int refineCutoff = 
@@ -122,23 +120,23 @@ public class PhylogeneticTreeRefiner {
 
 		//get index for next node to be refined
 		int nextRefineIndex = getNextIndexToRefine(refiningTree, refineCutoff);
-		System.out.println("nextRefineIndex: " + nextRefineIndex);
+		logger.info("nextRefineIndex: " + nextRefineIndex);
 
 		int refiningRound = 0;
 		while(nextRefineIndex > -1) {
 			refiningRound++;
-			System.out.println("tree refining round " + refiningRound);
+			logger.info("tree refining round " + refiningRound);
 			//get ingroup sequences for subtree
 			String[] descendants = refiningTree.getDescendantLeaves(nextRefineIndex);
 
 			HashSet refineIngroup = new HashSet();
 			String[] genomeFiles = new String[descendants.length];
-			System.out.println("next node to refine is " + nextRefineIndex + 
+			logger.info("next node to refine is " + nextRefineIndex + 
 					" and it has " + descendants.length + " descendants:");
 			for(int i = 0; i < descendants.length; i++) {
 				refineIngroup.add(descendants[i]);
 				genomeFiles[i] = (String)taxonToFileName.get(descendants[i]);
-				System.out.println("\t" + descendants[i] + "\t" + genomeFiles[i]);
+				logger.info("\t" + descendants[i] + "\t" + genomeFiles[i]);
 			}
 
 			int uniqueSpeciesCount = getUniqueSpeciesCountForGenomeFiles(genomeFiles);
@@ -152,18 +150,18 @@ public class PhylogeneticTreeRefiner {
 			String[] inAndOut = null;
 			int parentNode = refiningTree.getParentNode(nextRefineIndex);
 			if(parentNode == -1) {
-				System.out.println("PhyogeneticTreeRefiner.refineMethod2() parentNode is " +
+				logger.info("refine() parentNode is " +
 				"-1, so there is no outgroup");
 				inAndOut = refiningTree.getLeafLabels();
 			} else {
 				inAndOut = refiningTree.getDescendantLeaves(parentNode);
-				System.out.println("the parent of the nextRefineNode is " +
+				logger.info("the parent of the nextRefineNode is " +
 						parentNode + " and it has " + (inAndOut.length-descendants.length) + 
 				" additional descendants:");
 				for(int i = 0; i < inAndOut.length; i++) {
 					if(!refineIngroup.contains(inAndOut[i])) {
 						outgroupSet.add(inAndOut[i]);
-						System.out.println(inAndOut[i]);
+						logger.info(inAndOut[i]);
 					}
 				}
 			}
@@ -172,10 +170,10 @@ public class PhylogeneticTreeRefiner {
 			outgroupSet.toArray(refineOutgroupList);
 			String[] outgroupFiles = new String[refineOutgroupList.length];
 //			String[] refineOutgroupFiles = new String[refineOutgroupList.length];
-			System.out.println("outgroup pool:");
+			logger.info("outgroup pool:");
 			for(int i = 0; i < refineOutgroupList.length; i++) {
 				outgroupFiles[i] = (String) taxonToFileName.get(refineOutgroupList[i]);
-				System.out.println("\t" + refineOutgroupList[i] + "\t" + outgroupFiles[i]);
+				logger.info("\t" + refineOutgroupList[i] + "\t" + outgroupFiles[i]);
 			}
 
 			//build subtree
@@ -207,7 +205,7 @@ public class PhylogeneticTreeRefiner {
 			//Including the track may end up overriding other parameters.
 			pipelineCLP.remove(HandyConstants.TRACK);
 			
-			System.out.println("PhylogeneticTreeRefiner run pipeline with unique_species set to "
+			logger.info("PhylogeneticTreeRefiner run pipeline with unique_species set to "
 					+ useUniqueSpeciesFilter);
 			int outgroupCount = Math.min(outgroupFiles.length, 2);
 			//additional pipeline args
@@ -229,21 +227,21 @@ public class PhylogeneticTreeRefiner {
 			AdvancedTree refinedSubTree = new AdvancedTree(refinedTreeString);
 			refinedSubTree.setOutGroup(refineOutgroupList);
 
-			System.out.println("refined subtree: " + refinedTreeString);
+			logger.info("refined subtree: " + refinedTreeString);
 
 			//replace subtree in the full tree
-			System.out.println("replacing tree node " + nextRefineIndex + 
+			logger.info("replacing tree node " + nextRefineIndex + 
 			" with the new subtree");
-			System.out.println("refiningTree leaf count: " + refiningTree.getLeafLabels().length);
-			System.out.println("refiningTree before replacing node: " 
+			logger.info("refiningTree leaf count: " + refiningTree.getLeafLabels().length);
+			logger.info("refiningTree before replacing node: " 
 					+ refiningTree.getTreeString(true, true));
 
 			refiningTree = refiningTree.replaceNode(refinedSubTree.getBasicTree());
 			refiningTree.unroot();
 
-			System.out.println("refiningTree with node " + nextRefineIndex + 
+			logger.info("refiningTree with node " + nextRefineIndex + 
 					" refined: " + refiningTree.getTreeString(true, true));
-			System.out.println("refiningTree leaf count: " + 
+			logger.info("refiningTree leaf count: " + 
 					refiningTree.getLeafLabels().length);
 
 			//write refined tree to file
@@ -259,7 +257,7 @@ public class PhylogeneticTreeRefiner {
 
 			refiningTree.setOutGroup(outgroupList);
 			nextRefineIndex = getNextIndexToRefine(refiningTree, refineCutoff);
-			System.out.println("nextRefineIndex: " + nextRefineIndex);
+			logger.info("nextRefineIndex: " + nextRefineIndex);
 		}
 	}
 
@@ -345,200 +343,6 @@ public class PhylogeneticTreeRefiner {
 			}
 		}
 		return r;
-	}
-
-	/**
-	 * Returns null if there are no more nodes to be refined.
-	 * 
-	 * @param tree
-	 * @return
-	 */
-	private String getConstraintsForNextRegion(AdvancedTree tree) {
-		String r = null;
-		int[] meanSupports = tree.getMeanDescendantSupportValues();
-		int[] branchSupports = tree.getBranchSupports();
-
-		int targetRefineNode = -1;
-		int minRefineSetSize = tree.getNodeCount();
-		int minMean = 100;
-		boolean[] alreadyRefined = new boolean[meanSupports.length];
-		HashSet ingroup = null;
-		String[] genomeFiles = null;
-		while(targetRefineNode < 0) {
-			for(int i = 0; i < meanSupports.length; i++) {
-				if(meanSupports[i] > 0) {
-					if(branchSupports[i] == 100 & meanSupports[i] < 100) {
-						System.out.println("support for " + i + ": " + branchSupports[i] +
-								"\tmean: " + meanSupports[i]);
-						if(!alreadyRefined[i] && meanSupports[i] < minMean
-								&& tree.getParentNode(i) != -1) {
-							minMean = meanSupports[i];
-							targetRefineNode = i;
-						}
-					}
-				}
-			}
-
-			//if targetRefineNode == -1, then there is no next node to try to refine
-			//so we need to break out of this loop and return null from this method
-			if(targetRefineNode == -1) {
-				break;
-			}
-
-			System.out.println("target node for refining: " + targetRefineNode);
-			String[] descendants = tree.getDescendantLeaves(targetRefineNode);
-			ingroup = new HashSet();
-			genomeFiles = new String[descendants.length];
-			for(int i = 0; i < descendants.length; i++) {
-				ingroup.add(descendants[i]);
-				genomeFiles[i] = (String)taxonToFileName.get(descendants[i]);
-				System.out.println("\t" + descendants[i] + "\t" + genomeFiles[i]);
-			}
-
-			if(refinedSubsets.contains(ingroup)) {
-				//this group has already been refined
-				targetRefineNode = -1;
-			} else {
-				refinedSubsets.add(ingroup);
-				alreadyRefined[targetRefineNode] = true;
-			}
-		}
-		//break from while loop comes to here
-
-		if(targetRefineNode >= 0) { 
-			HashSet outgroupSet = new HashSet();
-			String[] inAndOut = tree.getDescendantLeaves(tree.getParentNode(targetRefineNode));
-			for(int i = 0; i < inAndOut.length; i++) {
-				if(!ingroup.contains(inAndOut[i])) {
-					outgroupSet.add(inAndOut[i]);
-				}
-			}
-
-			String[] outgroupList = new String[outgroupSet.size()];
-			outgroupSet.toArray(outgroupList);
-			String[] outgroupFiles = new String[outgroupList.length];
-			System.out.println("outgroup pool:");
-			for(int i = 0; i < outgroupList.length; i++) {
-				outgroupFiles[i] = (String) taxonToFileName.get(outgroupList[i]);
-				System.out.println("\t" + outgroupList[i] + "\t" + outgroupFiles[i]);
-			}
-
-			//assemble commands for PhylogenomicPipeline
-			CommandLineProperties pipelineCLP = new CommandLineProperties(clp.getArgs());
-			pipelineCLP.remove(HandyConstants.GENOME_FILE);
-			pipelineCLP.remove(HandyConstants.OUTGROUP);
-
-			String[] genomeFileArgs = new String[genomeFiles.length+1];
-			genomeFileArgs[0] = "-" + HandyConstants.GENOME_FILE;
-			System.arraycopy(genomeFiles, 0, genomeFileArgs, 1, genomeFiles.length);
-			pipelineCLP.addArgs(genomeFileArgs);
-
-			String[] outgroupFileArgs = new String[outgroupFiles.length+1];
-			outgroupFileArgs[0] = "-" + HandyConstants.OUTGROUP;
-			System.arraycopy(outgroupFiles, 0, outgroupFileArgs, 1, outgroupFiles.length);
-			pipelineCLP.addArgs(outgroupFileArgs);
-
-			//additional pipeline args
-			pipelineCLP.addArgs(
-					new String[]{
-							"-" + HandyConstants.OUTGROUP_COUNT, 
-							"1",
-							"-" + HandyConstants.UNIQUE_SPECIES,
-							HandyConstants.FALSE
-					}
-			);
-
-			PhyloPipeline pipeline = new PhyloPipeline(pipelineCLP.getArgs());
-			String refinedTreeString = pipeline.getTree();
-			AdvancedTree refinedTree = new AdvancedTree(refinedTreeString);
-			r = getFastTreeConstraintsForTree(refinedTree);
-			System.out.println("refined subtree: " + refinedTreeString);
-		}
-		return r;
-	}
-
-	private String getFastTreeConstraintsForTree(AdvancedTree tree) {
-		String r = null;
-		String[] taxa = tree.getLeafLabels();
-		Arrays.sort(taxa);
-
-		int nodeCount = tree.getNodeCount();
-		int[][] presentAbsent = new int[taxa.length][nodeCount];
-
-		for(int i = 0; i < nodeCount; i++) {
-			String[] leavesForNode = tree.getDescendantLeaves(i);
-			for(int j = 0; j < leavesForNode.length; j++) {
-				int leafIndex = Arrays.binarySearch(taxa, leavesForNode[j]);
-				presentAbsent[leafIndex][i] = 1;
-			}
-		}
-
-		StringBuffer sb = new StringBuffer();
-		for(int i = 0; i < taxa.length; i++) {
-			sb.append(">");
-			sb.append(taxa[i]);
-			sb.append("\n");
-			for(int j = 0; j < presentAbsent[i].length; j++) {
-				sb.append(""+ presentAbsent[i][j]);
-			}
-			sb.append("\n");
-		}
-
-		r = sb.toString();
-		return r;
-	}
-
-	private void runTrees(final FastTreeRunner[] runners, int threadCount, 
-			final Thread waitForThread) {
-		System.out.println("PhylogeneticTreeRefiner.runTrees() runners: "
-				+ runners.length + " threadCount: " + threadCount );
-		final int[] index = new int[1];
-
-		Thread waitingThread = new Thread(){
-			public void run() {
-				try {
-					waitForThread.join();
-					int nextIndex = index[0]++;
-					while(nextIndex < runners.length) {
-						runners[nextIndex].run();
-						System.out.println("refined support tree " + nextIndex
-								+ ": " + runners[nextIndex].getResult());
-						nextIndex = index[0]++;
-					}
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		};
-		System.out.println("start waitingThread for support trees");
-		waitingThread.start();
-
-		Thread[] threads = new Thread[threadCount-1];
-		for(int i = 0; i < threads.length; i++) {
-			threads[i] = new Thread() {
-				public void run() {
-					int nextIndex = index[0]++;
-					while(nextIndex < runners.length) {
-						runners[nextIndex].run();
-						System.out.println("refined support tree " + nextIndex
-								+ ": " + runners[nextIndex].getResult());
-						nextIndex = index[0]++;
-					}
-				}
-			};
-			System.out.println("starting support tree thread " + i);
-			threads[i].start();
-		}
-
-		try {
-			for(int i = 0; i < threads.length; i++) {
-				threads[i].join();
-			}
-			waitingThread.join();
-		} catch(InterruptedException ie) {
-			ie.printStackTrace();
-		}
 	}
 
 	private static FastaSequenceFile[] loadSequenceFiles(String[] sequenceFileNames) throws IOException {

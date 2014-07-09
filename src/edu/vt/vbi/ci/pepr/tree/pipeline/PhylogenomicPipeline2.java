@@ -189,11 +189,9 @@ public class PhylogenomicPipeline2 {
 		//how many genes should be filtered in the congruence filtering step
 		double percentileToRemove = 
 			Double.parseDouble(commandLineProperties.getValues(HandyConstants.TRIM_PERCENT, "0.1")[0]);
-//		targetMinGeneCount = (int) (targetMinGeneCount / (1-percentileToRemove));
 
 		SequenceSetProvider inputSequenceSetProvider = 
 			createInputSequenceSetProvider(sequenceFileNames, minTaxa, maxTaxa, targetTaxa, targetMinGeneCount, repOnly);
-		//									new TESTSequenceSetProvider(sequenceFileNames, minTaxa, maxTaxa);
 
 		setInputSequenceSetProvider(inputSequenceSetProvider);
 
@@ -224,7 +222,6 @@ public class PhylogenomicPipeline2 {
 				commandLineProperties.getValues(HandyConstants.TREE_THREADS, "1")[0]);
 
 		//See if matrix evaluation should be done
-
 		boolean doMatrixEvaluation = 
 			!commandLineProperties.getValues(
 					HandyConstants.MATRIX_EVALUATION, 
@@ -492,7 +489,7 @@ public class PhylogenomicPipeline2 {
 		FastaSequenceSet[] keepSequences = new FastaSequenceSet[keepSequencesList.size()];
 		keepSequencesList.toArray(keepSequences);
 		
-		r = new TESTSequenceSetProvider(keepSequences);
+		r = new SequenceSetProviderImpl(keepSequences);
 		
 		return r;
 	}
@@ -548,7 +545,7 @@ public class PhylogenomicPipeline2 {
 	 *                of one sequence per taxon.
 	 * @return
 	 */
-	private TESTSequenceSetProvider createInputSequenceSetProvider(
+	private SequenceSetProviderImpl createInputSequenceSetProvider(
 			String[] sequenceFileNames, int minTaxa, int maxTaxa, 
 			int targetTaxa, int targetMinGeneCount, boolean repOnly) {
 		if(verboseLevel > 0) {
@@ -556,8 +553,8 @@ public class PhylogenomicPipeline2 {
 					sequenceFileNames.length + " " + minTaxa + " " + maxTaxa + " "
 					+ targetTaxa + " " + targetMinGeneCount + " " + repOnly);
 		}
-		TESTSequenceSetProvider r =
-			new TESTSequenceSetProvider(sequenceFileNames, minTaxa, maxTaxa);
+		SequenceSetProviderImpl r =
+			new SequenceSetProviderImpl(sequenceFileNames, minTaxa, maxTaxa);
 
 		if(repOnly) {
 			r.removeNonRepresentative();

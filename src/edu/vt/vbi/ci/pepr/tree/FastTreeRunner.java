@@ -28,10 +28,9 @@ public class FastTreeRunner implements Runnable{
 	private boolean useRaxmlBranchLengths = false;
 	private int threadCount = 1;
 	private boolean nucleotide = false;
-	private Logger logger;
+	private Logger logger = Logger.getLogger(getClass());
 
 	public FastTreeRunner() {
-		logger = Logger.getLogger("FastTreeRunner");
 	}
 
 	public void run() {
@@ -79,8 +78,6 @@ public class FastTreeRunner implements Runnable{
 
 			//execute the command and capture the output. The newick format tree
 			//is written to stdout.
-			System.out.println("running FastTree with command: " 
-					+ fastTreeCommand);
 			CommandResults results = ExecUtilities.exec(fastTreeCommand);
 			if(results.getStdout().length > 0) {
 				String treeString = results.getStdout()[0];
@@ -95,10 +92,10 @@ public class FastTreeRunner implements Runnable{
 				}
 				setResult(treeString);
 			} else {
-				System.out.println("No FastTree result reported to stdout. Here is stderr:");
+				logger.error("No FastTree result reported to stdout. Here is stderr:");
 				String[] stderr = results.getStderr();
 				for(int i = 0; i < stderr.length; i++) {
-					System.out.println(stderr[i]);
+					logger.error(stderr[i]);
 				}
 			}
 		} catch(IOException ioe) {
@@ -153,9 +150,6 @@ public class FastTreeRunner implements Runnable{
 			              " -n " + getRunName() + " -t " + intreeFileName;
 			
 			//run raxml
-			System.out.println("running command to add raxml branch lengths to " +
-					"FastTree tree:");
-			System.out.println(raxmlCommand);
 			CommandResults raxmlResults = ExecUtilities.exec(raxmlCommand);
 
 			//read raxml result file
@@ -167,8 +161,7 @@ public class FastTreeRunner implements Runnable{
 			intreeFile.delete();
 			raxmlTreeFile.getFile().delete();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 		
 		return r;

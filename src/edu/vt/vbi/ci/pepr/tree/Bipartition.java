@@ -160,11 +160,6 @@ public class Bipartition implements Comparable{
 		int r = 0;
 
 		if(!this.isCompatible(otherBP)) {
-			//			ExtendedBitSet andNotSetSmaller = 
-			//				this.getSmallerSide().getAndNot(otherBP.getSmallerSide());
-			//			ExtendedBitSet andNotSetLarger = 
-			//				this.getSmallerSide().getAndNot(otherBP.getLargerSide());
-
 			ExtendedBitSet andNotSetSmaller = null;
 			ExtendedBitSet andNotSetLarger = null;
 			if(useParticipatingTaxonSetForEqualityCheck) {
@@ -226,19 +221,12 @@ public class Bipartition implements Comparable{
 
 			ExtendedBitSet testSet = 
 				thisAdjustedSmallerSide.getAnd(otherAdjustedSmallerSide);
-			//		    System.out.println("a " + r);
 			r = testSet.cardinality() == 0;
-			//		    System.out.println("b " + r);
 			r = r || testSet.cardinality()
 			== thisAdjustedSmallerSide.cardinality();
-			//		    System.out.println("c " + r);
 			r = r || testSet.cardinality() 
 			== otherAdjustedSmallerSide.cardinality();
-			//		    System.out.println("d " + r);		    
 		}
-		//		System.out.println(this.getSmallerSide());
-		//		System.out.println(otherBP.getSmallerSide());
-		//		System.out.println("BPSet.isSupertreeCompatible(): " + r);
 		return r;
 	}
 

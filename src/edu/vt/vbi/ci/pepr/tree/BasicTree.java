@@ -2,6 +2,8 @@ package edu.vt.vbi.ci.pepr.tree;
 
 import java.util.Arrays;
 
+import org.apache.log4j.Logger;
+
 import edu.vt.vbi.ci.util.ExtendedBitSet;
 
 
@@ -24,6 +26,8 @@ public class BasicTree {
 	private static char closeParenChar = ')';
 	private static char commaChar = ',';
 	private static char colonChar = ':';
+
+	private Logger logger = Logger.getLogger(getClass());
 
 	/*
 	 * The original String representation of the tree/
@@ -148,7 +152,7 @@ public class BasicTree {
 		}
 
 		if(openCount != closeCount) {
-			System.out.println("Unmatched parentheses in tree string. open: " 
+			logger.error("Unmatched parentheses in tree string. open: " 
 					+ openCount
 					+ ", close: " + closeCount);
 		} else {
@@ -298,10 +302,7 @@ public class BasicTree {
 				int nextColonIndex = treeString.indexOf(colon,
 						firstCandidateIndex);
 				int treeEnd = treeString.length();
-				//			String nodeString 
-				//			= treeString.substring(nodeStart, nodeEnd);
 				double branchLength = Double.NaN;
-				//			double branchSupport = Double.NaN;
 				int valueEnd = treeEnd;
 				if(nextCommaIndex > -1) {
 					valueEnd = Math.min(valueEnd, nextCommaIndex);
@@ -450,7 +451,7 @@ public class BasicTree {
 		String r = null;
 		int topLevel = getTopLevelNode();
 		if(topLevel == -1) {
-			System.out.println("no top level nodes were found in this tree");
+			logger.info("no top level nodes were found in this tree");
 		} else {
 			r = getNodeString(topLevel, includeLengths, includeSupports);
 			r = r + ";";
@@ -533,7 +534,6 @@ public class BasicTree {
 		}
 		r = getNodeTopologyString(topLevel);
 		r = r + ";";
-		//		System.out.println("topLevelNodes: " + topLevelNodes);
 		return r;
 	}
 
@@ -668,7 +668,6 @@ public class BasicTree {
 	 */
 	void unroot() {
 		if(isRooted()) {
-//			System.out.println("BasicTree.unroot() tree is rooted");
 			//find the root and remove it, making one child of the root
 			//a child of the other child of the root
 			int root = 0;
@@ -679,7 +678,6 @@ public class BasicTree {
 				}
 			}
 			root = getTopLevelNode();
-//			System.out.println("BasicTree.unroot() tree root is: " + root);
 
 			int[] rootChildren = nodeChildPointers[root];
 			//root Children should have length 2, otherwise root 
@@ -693,7 +691,6 @@ public class BasicTree {
 			int newParent = rootChildren[0];
 			int newChild = rootChildren[1];
 			if(nodeChildPointers[newParent].length < 2) {
-//				System.out.println("newParent only has one child, so reverse order");
 				newParent = rootChildren[1];
 				newChild = rootChildren[0];
 			}
@@ -916,7 +913,6 @@ public class BasicTree {
 				if(nodeChildPointers[parent].length == 1) {
 					int remainingChild = nodeChildPointers[parent][0];
 					if(nodeParentPointers[parent] == NO_PARENT_INDICATOR) {
-						System.out.println("making remaining child the new root");
 						//remove parent and make the single child the new root.
 						nodeParentPointers[remainingChild] = NO_PARENT_INDICATOR;
 						nodeChildPointers[parent] = new int[0];
@@ -1175,9 +1171,6 @@ public class BasicTree {
 	public boolean containsTaxon(String taxon) {
 		boolean r = false;
 		String[] leaves = getLeaves();
-		if(leaves == null) {
-			System.out.println("Freak Out - leaves is null for this tree: " + originalTreeString);
-		}
 		for(int i = 0; !r && i < leaves.length; i++) {
 			r = taxon.equalsIgnoreCase(leaves[i]);
 		}

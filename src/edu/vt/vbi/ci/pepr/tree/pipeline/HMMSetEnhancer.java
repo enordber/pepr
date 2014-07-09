@@ -46,14 +46,13 @@ public class HMMSetEnhancer {
 		int minTaxa = Integer.parseInt(clp.getValues(HandyConstants.MIN_TAXA, "0")[0]);
 		int maxTaxa = Integer.parseInt(clp.getValues(HandyConstants.MAX_TAXA, "999999999")[0]);
 		int hmmThreads = threads;
-		//load genomeSequenceFiles
+
 		FastaSequenceFile[] genomeSequenceFiles = 
 			new FastaSequenceFile[genomeFiles.length];
 		for(int i = 0; i < genomeSequenceFiles.length; i++) {
 			try {
 				genomeSequenceFiles[i] = new FastaSequenceFile(genomeFiles[i]);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -66,7 +65,7 @@ public class HMMSetEnhancer {
 	public HMMSetEnhancer(String hgDirName, FastaSequenceFile[] ingroupGenomeSequenceFiles, 
 			int alignThreads, int hmmThreads, int minTaxa, int maxTaxa, 
 			FastaSequenceFile[] outgroupGenomeSequenceFiles, int outGroupsToInclude) {
-		System.out.println("HMMSetEnhancer sequence files: " + 
+		logger.info("HMMSetEnhancer sequence files: " + 
 				ingroupGenomeSequenceFiles.length + " minTaxa: " + minTaxa 
 				+ " maxTaxa: " + maxTaxa + 
 				" outgroup files: " + outgroupGenomeSequenceFiles.length + 
@@ -260,7 +259,7 @@ public class HMMSetEnhancer {
 						//entry files cause the homolog sets to be prematurely
 						//truncated and this is to correct for that problem.	
 						logger.info("ignoring duplicate member from genome " 
-						+ genomeSequenceFiles[genomeIndex].getFileName());
+						+ genomeSequenceFiles[genomeIndex].getFileName() + ": " + hmmResults[i].getId());
 					} else {
 						//duplicate genome seen - stop collecting for this set
 						collectingForSet = false;
@@ -512,7 +511,6 @@ public class HMMSetEnhancer {
 					+ hmmFileName + " " 
 					+ genomeSequenceFiles[genomeIndex].getFile().getPath();
 
-					System.out.println(hmmsearchCmd);
 					ExecUtilities.exec(hmmsearchCmd);
 					TextFile resultFile =  new TextFile(outfileName);
 					resultHolder[genomeIndex] = resultFile;
@@ -520,9 +518,9 @@ public class HMMSetEnhancer {
 					hmmResultHolder[genomeIndex] = hmmResults;
 					genomeIndex = getNextGenomeIndex();
 				} catch(IOException ioe) {
-					System.out.println("IOException on genomeIndex " + 
+					logger.error("IOException on genomeIndex " + 
 							genomeIndex + ": " + genomeSequenceFiles[genomeIndex].getFileName());
-					ioe.printStackTrace();
+					logger.error(ioe);
 				}
 			}
 		}

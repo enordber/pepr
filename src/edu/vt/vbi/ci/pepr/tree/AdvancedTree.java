@@ -10,6 +10,8 @@ import java.util.HashSet;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.apache.log4j.Logger;
+
 import edu.vt.vbi.ci.util.ExtendedBitSet;
 import edu.vt.vbi.ci.util.JSONUtilities;
 
@@ -28,10 +30,14 @@ public class AdvancedTree {
 	private BasicTree[] treeStack;
 	private TreeState[] treeStateStack;
 	private BasicTree currentTree;
-	private int currentTreePointer; //index in treeStateStack for currentTree
+	
+	//index in treeStateStack for currentTree
+	private int currentTreePointer; 
+	
 	private double[] nodeDistancesFromRoot;
 	private int[] preorderTraversalSequence;
 	private int[] nodeDescendantLeafCounts;
+	private Logger logger = Logger.getLogger(getClass());
 
 	/*
 	 * current options for nodeState are EXPANDED and COLLAPSED
@@ -84,7 +90,6 @@ public class AdvancedTree {
 		currentTree = startingTree;
 		calcPreorderTraversalSequence();
 		calcNodeDesendantLeaves();
-		//		ladderizeUp();
 	}
 
 	/**
@@ -191,7 +196,7 @@ public class AdvancedTree {
 			currentNode = nodeStack[nodeStack[0]--];
 			preorderTraversalSequence[traversalIndex++] = currentNode;
 			if(nodeStates[currentNode] != COLLAPSED) {
-				//dont' add descendants of COLLAPSED nodes to the stack
+				//don't add descendants of COLLAPSED nodes to the stack
 				for(int i = nodeChildPointers[currentNode].length-1; i >= 0; i--) {
 					nodeStack[++nodeStack[0]] = nodeChildPointers[currentNode][i];
 				}
@@ -240,9 +245,6 @@ public class AdvancedTree {
 	}
 
 	public void unroot() {
-		//create a clone of current tree
-		//unroot the clone tree
-		//add unrooted tree to the treeStack, as the currentTree
 		BasicTree unrootTree = (BasicTree)currentTree.clone();
 		unrootTree.unroot();
 		setCurrentTree(unrootTree);
@@ -340,7 +342,7 @@ public class AdvancedTree {
 
 	public double[] getLeafDistancesFromRoot() {
 		double[] r =null;
-		int[] leave = getLeaves();
+		int[] leaves = getLeaves();
 		r = new double[leaves.length];
 		for(int i = 0; i < r.length; i++) {
 			r[i] = nodeDistancesFromRoot[leaves[i]];
@@ -578,9 +580,8 @@ public class AdvancedTree {
 				try{
 					leafList.add(labels[indices[i]]);
 				} catch(ArrayIndexOutOfBoundsException e) {
-					System.out.println("array index out of bounds. trying index "
+					logger.error("array index out of bounds. trying index "
 							+ indices[i] + " in labels array with length " + labels.length);
-					System.out.print("");
 				}
 			}
 		}
@@ -637,7 +638,6 @@ public class AdvancedTree {
 	 * will be selected to maximize the separation between the two sets.
 	 */
 	public void setOutGroup(String[] outGroupLabels) {
-//		System.out.println("AdvancedTree.setOutGroup()");
 		String[] allTaxa = getLeafLabels();
 		String[] sortedTaxa = TreeUtils.compressTaxonNamesForComparison(allTaxa);
 		Arrays.sort(sortedTaxa);
@@ -680,12 +680,10 @@ public class AdvancedTree {
 		calcPreorderTraversalSequence();
 
 		int deepestNodeWithMax = getMostEnrichedNode(outGroupLabels);
-//		System.out.println("deepestNodeWithMax: " + deepestNodeWithMax);
 		
 		int parentNode = currentTree.getNodeParentPointers()[deepestNodeWithMax];
 
 		BasicTree outgroupRootedTree = (BasicTree) currentTree.clone();
-//		outgroupRootedTree.unroot();
 		outgroupRootedTree.rootBetweenNodes(deepestNodeWithMax, parentNode, 0.5);
 
 		//move currentTreePointer back one, so temporary tree created in this
@@ -742,7 +740,7 @@ public class AdvancedTree {
 					nodeTaxaSets[thisNode].or(nodeTaxaSet);
 				}
 			} else {
-				System.out.println("AdvancedTree.setOutgroup() node is " + 
+				logger.warn("AdvancedTree.setOutgroup() node is " + 
 						thisNode + " but nodeTaxaSets.length is only " +
 						nodeTaxaSets.length);
 			}
@@ -758,8 +756,6 @@ public class AdvancedTree {
 			int outgroupCount = testerSet.cardinality();
 			int ingroupCount = nodeDescendantLeafCounts[i] - outgroupCount;
 			outMinusInCounts[i] = outgroupCount - ingroupCount;
-			//			System.out.println("node " + i + ": in: " + ingroupCount +
-			//					"\tout: " + outgroupCount + "\tdiff: " + outMinusInCounts[i]);
 		}
 
 		//traverse tree preorder, keeping the last node with the maximum out-in
@@ -836,7 +832,6 @@ public class AdvancedTree {
 			int root = currentTree.getRootIndex();
 			for(int i = 1; i < preorderTraversalSequence.length; i++) {
 				int node = preorderTraversalSequence[i];
-//				System.out.println("AdvancedTree.makeCladogram() node: " + node + "\tparent: " + nodeParentPointers[node] + "\troot: " + root);
 				int[] childNodes = nodeChildPointers[node];
 				cladogramBranchLengths[node] = 
 					remainingLength[nodeParentPointers[node]] - maxStepsToTip[node];
@@ -864,7 +859,6 @@ public class AdvancedTree {
 			System.arraycopy(treeStateStack, 0, newStack, 0, treeStateStack.length);
 			treeStateStack = newStack;
 		}
-		//		System.out.println("AdvancedTree.setNewTreeState() adding tree state to stack at position " + currentTreePointer);
 
 		//put the new state in the stack
 		treeStateStack[currentTreePointer] = newState;
@@ -878,12 +872,6 @@ public class AdvancedTree {
 		}
 		refresh();
 		fireChangeEvent();
-	}
-
-	public void midPointRoot() {
-		//find the midpoint.
-
-		//root the tree there
 	}
 
 	/**
@@ -925,10 +913,7 @@ public class AdvancedTree {
 				//get branch lengths of tree and do log
 				double[] branchLengths = logTree.getBranchLengths();
 				for(int i = 0; i < branchLengths.length; i++) {
-					//					System.out.print("AdvancedTree.setUseLogBranchLengths() change from "
-					//							+ branchLengths[i] );
 					branchLengths[i] = Math.log(branchLengths[i]+logAdd)/logBase;
-					//					System.out.println(" to " + branchLengths[i]);
 				}
 
 				//set branch lengths to log lengths
@@ -1038,8 +1023,6 @@ public class AdvancedTree {
 	public boolean redo() {
 		boolean r = false;
 		if(treeStateStack.length > currentTreePointer+1) {
-			System.out.println("AdvancedTree.redo() changing current tree from "
-					+ currentTreePointer + " to " + (currentTreePointer+1));
 			currentTreePointer++;
 			currentTree = treeStateStack[currentTreePointer].getTree();
 			nodeStates = treeStateStack[currentTreePointer].getNodeStates();
@@ -1101,39 +1084,10 @@ public class AdvancedTree {
 			} else {
 				r[node] = 
 					descendantSupportSums[node] / nodeDescendantCounts[node];
-				//				System.out.println("node: " + node +
-				//						"\tcount: " + nodeDescendantCounts[node] + 
-				//						"\tsupport: " + branchSupports[node] + 
-				//						"\tsupportSum: " + descendantSupportSums[node] +
-				//						"\tmean: " + r[node]);
 			}
 		}
 
 		return r;
-	}
-
-	/**
-	 * For any branches in common between this tree and the otherTree,
-	 * the support values in this tree are replaced with those from 
-	 * otherTree.
-	 * 
-	 * @param otherTree
-	 */
-	public void transferBranchSupports(AdvancedTree otherTree) {
-		int[] otherSupports = otherTree.getBranchSupports();
-		int[] supports = this.getBranchSupports();
-		String[] supportStrings = currentTree.getBranchSupportStrings();
-
-		for(int i = 0; i < otherTree.preorderTraversalSequence.length; i++) {
-			int node = otherTree.preorderTraversalSequence[i];
-			String[] leaves = otherTree.getDescendantLeaves(node);
-			int matchingNode = getMatchingNode(leaves);
-			if(matchingNode >= 0) {
-				int newSupport = otherSupports[node];
-				int oldSupport = supports[matchingNode];
-
-			}
-		}
 	}
 
 	/**
@@ -1178,80 +1132,6 @@ public class AdvancedTree {
 	public BasicTree getBasicTree() {
 		return currentTree;
 	}
-
-	/**
-	 * Returns a representation of this Tree Object as JSON.
-	 * @return
-	 */
-	public String toJSON() {
-		String r = null;
-		StringBuffer sb = new StringBuffer();
-		ArrayList nameList = new ArrayList();
-		ArrayList valueList = new ArrayList();
-		//things to include in the JSON:
-		//nodeParentPainters
-		nameList.add("nodeParentPointers");
-		valueList.add(JSONUtilities.getJSONString(currentTree.getNodeParentPointers()));
-
-		//nodeChildPointers
-		nameList.add("nodeChildPointers");
-		valueList.add(JSONUtilities.getJSONString(currentTree.getNodeChildPointers()));
-
-		//branchLengths
-		nameList.add("branchLengths");
-		valueList.add(JSONUtilities.getJSONString(currentTree.getBranchLengths()));
-
-		//branchSupports
-		nameList.add("branchSupports");
-		valueList.add(JSONUtilities.getJSONString(getBranchSupports()));
-
-		//preorderTraversalSequence
-		nameList.add("preorderTraversalSequence");
-		valueList.add(JSONUtilities.getJSONString(preorderTraversalSequence));
-
-		//tipLabels
-		nameList.add("tipLabels");
-		valueList.add(JSONUtilities.getJSONString(getTipLabels()));
-
-		//nodeCoordinates
-		nameList.add("nodeCoordinates");
-		valueList.add(JSONUtilities.getJSONString(getNodeCoordinates()));
-
-		//branchXCoordinates
-		nameList.add("branchXCoordinates");
-		valueList.add(JSONUtilities.getJSONString(getBranchXCoordinates()));
-
-		//maxDistanceFromRoot
-		nameList.add("maxDistanceFromRoot");
-		valueList.add(""+getMaxDistanceFromRoot());
-
-		//tips
-		nameList.add("tips");
-		valueList.add(JSONUtilities.getJSONString(getTips()));
-
-		//tip distances from root
-		nameList.add("tipDistancesFromRoot");
-		valueList.add(JSONUtilities.getJSONString(getTipDistancesFromRoot()));
-
-		//node states. Values are either 1 for Expanded, or 2 for Collapsed
-		nameList.add("nodeStates");
-		valueList.add(JSONUtilities.getJSONString(getNodeStates()));
-
-		//node refined - either true or false
-		nameList.add("nodeRefined");
-		valueList.add(JSONUtilities.getJSONString(getNodeRefined()));
-
-		String[] names = new String[nameList.size()];
-		nameList.toArray(names);
-
-		String[] values = new String[valueList.size()];
-		valueList.toArray(values);
-
-		r = JSONUtilities.assembleJSONObject(names, values);
-
-		return r;
-	}
-
 
 	public int[] getPreorderTraversalSequence() {
 		return preorderTraversalSequence;
@@ -1703,7 +1583,6 @@ public class AdvancedTree {
 			tipLabels[node] = tipLabels[node].replaceAll("'", "");
 			tipLabels[node] = tipLabels[node].replaceAll("_", " ");
 			sb.append(tipLabels[node]);
-//			System.out.println(tipLabels[node]);
 //			sb.append(node);
 			sb.append("'");
 		} else {

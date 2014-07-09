@@ -32,12 +32,11 @@ public class RAxMLRunner {
 	private static final String RAXML = "raxml";
 	private static Random random = new Random();
 	private static HashSet usedRunNames = new HashSet();
-	private Logger logger;
+	private Logger logger = Logger.getLogger(getClass());
 	private SequenceAlignment alignment;
 	private int bootstrapReps = 10;
 	private String runName;
 	private int threadCount;
-//	private RemoteHost host;
 	private boolean useTaxonNames = true;
 	private boolean doPerSiteLikelihoods = false;
 	private boolean deleteGeneratedFiles = true;
@@ -61,24 +60,7 @@ public class RAxMLRunner {
 	 */
 	private boolean parsimonyWithBL = false;
 
-	public static void main(String[] args) {
-		String alignmentFileName = "/Users/enordber/vbi/rickettsia/set_2029_align";
-		try {
-			SequenceAlignment sa = 
-				SequenceAlignmentParser.parseFastaAlignmentFile(alignmentFileName);
-			RAxMLRunner raxmlRunner = new RAxMLRunner(1);
-			raxmlRunner.setAlignment(sa);
-			raxmlRunner.setBootstrapReps(10);
-			raxmlRunner.run();
-			System.out.println(raxmlRunner.getBestTreeWithSupports());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
 	public RAxMLRunner(int threads) {
-		logger = Logger.getLogger("RAxMLRunner");
 		setThreadCount(threads);
 
 		String bootstrapProp = System.getProperty(HandyConstants.SUPPORT_REPS);
@@ -87,7 +69,7 @@ public class RAxMLRunner {
 				int bs = Integer.parseInt(bootstrapProp);
 				setBootstrapReps(bs);
 			} catch(NumberFormatException nfe) {
-				System.out.println("Value for " + HandyConstants.SUPPORT_REPS + 
+				logger.error("Value for " + HandyConstants.SUPPORT_REPS + 
 						" must be an integer, not: " + bootstrapProp);
 			}
 		}
@@ -109,7 +91,6 @@ public class RAxMLRunner {
 			if(getThreadCount() > 1) {
 				raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 			}
-			//		System.out.println("raxml path: " + raxmlPath);
 			String raxmlCommand = "";
 
 			//determine the file name for the alignment file
@@ -156,14 +137,12 @@ public class RAxMLRunner {
 						raxmlCommand = raxmlCommand + " -y ";
 					}
 				}
-				System.out.println("raxml command: " + raxmlCommand);
 				//run raxml, and wait for it to finish
 				CommandResults results = ExecUtilities.exec(raxmlCommand);
 				//grab the tree string from the result file
 
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException ioe) {
+				logger.error(ioe);
 			}
 		}
 	}
@@ -186,7 +165,6 @@ public class RAxMLRunner {
 		if(getThreadCount() > 1) {
 			raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 		}
-		//		System.out.println("raxml path: " + raxmlPath);
 		String raxmlCommand = "";
 
 		//determine the file name for the alignment file
@@ -224,15 +202,12 @@ public class RAxMLRunner {
 			System.out.println("ML branch length raxml command: " + raxmlCommand);
 			CommandResults secondResults = ExecUtilities.exec(raxmlCommand);
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			logger.error(ioe);
 		}
 	}
 	
 	private void runRaxmlParsimonyWithBranchLengths() {
-		System.out.println("RAxMLRunner.runRaxmlParsimonyWithBranchLengths()");
-
 		String raxmlPath = ExecUtilities.getCommandPath(RAXML_HPC);
 		if(raxmlPath == null || raxmlPath.trim().startsWith("no ")) {
 			raxmlPath = ExecUtilities.getCommandPath(RAXML);
@@ -241,7 +216,6 @@ public class RAxMLRunner {
 		if(getThreadCount() > 1) {
 			raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 		}
-		//		System.out.println("raxml path: " + raxmlPath);
 		String raxmlCommand = "";
 
 		//determine the file name for the alignment file
@@ -267,7 +241,6 @@ public class RAxMLRunner {
 			if(getThreadCount() > 1) {
 				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
 			}
-			System.out.println("parsimony tree raxml command: " + raxmlCommand);
 			//run raxml, and wait for it to finish
 			CommandResults firstResults = ExecUtilities.exec(raxmlCommand);
 
@@ -286,15 +259,13 @@ public class RAxMLRunner {
 			if(getThreadCount() > 1) {
 				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
 			}
-			System.out.println("ML branch length raxml command: " + raxmlCommand);
 			CommandResults secondResults = ExecUtilities.exec(raxmlCommand);
 			if(deleteGeneratedFiles()) {
 				new File(parsimonyTreeFileName).deleteOnExit();
 			}
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			logger.error(ioe);
 		}
 	}
 	
@@ -311,9 +282,8 @@ public class RAxMLRunner {
 		try {
 			TextFile tf = new TextFile(perSiteLLResultFileName);
 			r = tf.getAllLines();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			logger.error(ioe);
 		}
 		return r;
 	}
@@ -330,9 +300,8 @@ public class RAxMLRunner {
 			for(int i = 0; i < treeFileLines.length; i++) {
 				sb.append(treeFileLines[i]);
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			logger.error(ioe);
 		}
 
 		return sb.toString();
@@ -349,9 +318,8 @@ public class RAxMLRunner {
 			for(int i = 0; i < treeFileLines.length; i++) {
 				sb.append(treeFileLines[i]);
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			logger.error(ioe);
 		}
 
 		return sb.toString();
@@ -395,9 +363,8 @@ public class RAxMLRunner {
 				//since the results have been retrieved, the file can be deleted
 				treeFile.getFile().deleteOnExit();
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			logger.error(ioe);
 		}
 
 		return sb.toString();
@@ -414,9 +381,7 @@ public class RAxMLRunner {
 	}
 
 	public void setBootstrapReps(int reps) {
-		//		if(reps > 1) {
 		bootstrapReps = reps;
-		//		}
 	}
 
 	public void setUseTaxonNames(boolean b) {
@@ -487,14 +452,14 @@ public class RAxMLRunner {
 			File fullTreeFile = File.createTempFile("raxml_", ".nwk", workingDir);
 			//fullTreeFile.deleteOnExit();
 			fullTreeFileName = fullTreeFile.getName();
-			System.out.println("write full tree to " + fullTreeFileName);
-			System.out.println("mainTree: " + mainTree);
+			logger.info("write full tree to " + fullTreeFileName);
+			logger.info("mainTree: " + mainTree);
 			FileWriter fullTreeWriter = new FileWriter(fullTreeFile);
 			fullTreeWriter.write(mainTree + "\n");
 			fullTreeWriter.flush();
 			fullTreeWriter.close();
 		
-		//write the support trees to a file
+		    //write the support trees to a file
 			File supportTreeFile = File.createTempFile("raxml_", ".sup", workingDir);
 			//supportTreeFile.deleteOnExit();
 			supportTreeFileName = supportTreeFile.getName();
@@ -524,7 +489,6 @@ public class RAxMLRunner {
 			" -s " + alignmentFileName;
 			
 			//run RAxML command
-			logger.info("raxml decorate command: " + raxmlDecorateCommand);
 			CommandResults results = 
 					ExecUtilities.exec(raxmlDecorateCommand);
 			//read result from file
@@ -534,8 +498,8 @@ public class RAxMLRunner {
 			if(deleteGeneratedFiles()) {
 				resultFile.getFile().deleteOnExit();
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException ioe) {
+			logger.error(ioe);
 		}
 
 		return r;

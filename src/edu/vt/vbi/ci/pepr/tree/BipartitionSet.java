@@ -11,11 +11,6 @@ import edu.vt.vbi.ci.pepr.stats.StatisticsUtilities;
 
 public class BipartitionSet {
 
-	/*
-	 * debug flag controls print outs.
-	 */
-	private boolean debug = false;
-
 	private String[] taxa;
 
 	/*
@@ -92,13 +87,7 @@ public class BipartitionSet {
 		//count of the number of times it is seen
 		int uniqueBipartCount = 0;
 		Bipartition previousBipart = null;
-		if(debug) {
-			System.out.println("BipartitionSet.setBipartitions() sort biparts...");
-		}
 		Arrays.sort(biparts);
-		if(debug) {
-			System.out.println("done sorting");
-		}
 		for(int i = 0; i < biparts.length; i++) {
 			if(!biparts[i].equals(previousBipart)) {
 				uniqueBipartCount++;
@@ -106,9 +95,6 @@ public class BipartitionSet {
 			}
 		}
 
-		if(debug) {
-			System.out.println("uniqueBipartCount: " + uniqueBipartCount);
-		}
 		bipartitions = new Bipartition[uniqueBipartCount];
 		int[] bipartCounts = new int[uniqueBipartCount];
 		int index = -1;
@@ -122,14 +108,6 @@ public class BipartitionSet {
 		}
 
 		int[] countDistribution = StatisticsUtilities.getDistribution(bipartCounts);
-		if(debug) {
-			System.out.println("bipart count distribution: ");
-			for(int i = 0; i < countDistribution.length; i++) {
-				if(countDistribution[i] > 0) {
-					System.out.println("" + i + ": " + countDistribution[i]);
-				}
-			}
-		}
 
 		//determine count cutoff
 		int countCutoff = 0;
@@ -139,9 +117,6 @@ public class BipartitionSet {
 			included += countDistribution[i];
 		}
 
-		if(debug) {
-			System.out.println("cutoff at " + countCutoff + " will keep top " + included);
-		}
 		Bipartition[] topBiparts = new Bipartition[included];
 		int[] topCounts = new int[included];
 		index = -1;
@@ -193,10 +168,6 @@ public class BipartitionSet {
 		if(equivalentList == null) {
 			equivalentList = new ArrayList(1);
 			equivalentBipartitionToIndividualBipartitionList.put(bipartition, equivalentList);
-		} else {
-			if(debug) {
-				//				System.out.println("adding a duplicate equivalent bipartition to the list");
-			}
 		}
 
 		equivalentList.ensureCapacity(equivalentList.size() + 1);
@@ -227,11 +198,6 @@ public class BipartitionSet {
 	 */
 	private Bipartition[] getNonTrivialBipartitions() {
 		Bipartition[] r = null;
-		if(debug) {
-			System.out.println(">BipartitionSet.getNonTrivialBipartitions()");
-			System.out.println("bipartition count: " + bipartitionToCount.size());
-			System.out.println("equivalnce sets: " + equivalentBipartitionToIndividualBipartitionList.size());
-		}
 		HashSet biparts = new HashSet();
 		for(int i = 0; i < bipartitions.length; i++) {
 			biparts.add(bipartitions[i]);
@@ -246,9 +212,6 @@ public class BipartitionSet {
 		}
 		r = new Bipartition[biparts.size()];
 		biparts.toArray(r);
-		if(debug) {
-			System.out.println("<BipartitionSet.getNonTrivialBipartitions()");
-		}
 		return r;
 	}
 
@@ -256,10 +219,6 @@ public class BipartitionSet {
 	 * Prints information about all non-trivial Bipartitions.
 	 */
 	public void printNonTrivialBipartitionsAndCounts() {
-		if(debug) {
-			System.out.println("BipartitionSet.printNonTrivialBipartitionsAndCounts()");
-		}
-
 		printBipartitionsAndCounts(getNonTrivialBipartitions());
 	}
 
@@ -316,8 +275,6 @@ public class BipartitionSet {
 
 		for(int i = 0; r && i < bipartitions.length; i++) {
 			r = bipartitions[i].isSupertreeCompatible(bp);
-			System.out.println("BipartitionSet.isCompatible() after " 
-					+ i + ": " + r);
 		}
 		return r;
 	}
@@ -327,10 +284,6 @@ public class BipartitionSet {
 	 * @param biparts
 	 */
 	private void printBipartitionsAndCounts(Bipartition[] biparts) {
-		if(debug) {
-			System.out.println("BipartitionSet.printBipartitionsAndCounts()");
-		}
-
 		//print taxon list
 		for(int i = 0; i < taxa.length; i++) {
 			System.out.println(i + ": " + taxa[i]);
@@ -371,9 +324,6 @@ public class BipartitionSet {
 			sb.append("\t");
 			sb.append(bipartitions[i].getSmallerSide().toString());
 			System.out.println(sb);
-		}
-		if(debug) {
-			System.out.println("<BipartitionSet.printBipartitionsAndCounts()");
 		}
 	}
 
@@ -448,7 +398,6 @@ public class BipartitionSet {
 			}
 		}
 
-		System.out.println("node pairs in graph: " + nodePairList.size());
 		Object[][] nodePairs = new Object[nodePairList.size()][];
 		nodePairList.toArray(nodePairs);
 
@@ -489,24 +438,9 @@ public class BipartitionSet {
 					if(!biparts[i].isCompatible(biparts[j]) && 
 							!biparts[i].isSupertreeCompatible(biparts[j])) {
 						retainedBiparts.remove(biparts[j]);
-						if(debug) {
-							System.out.println("Removing bipart " + j + ":\t"
-									+ biparts[j].getString() + " " + 
-									getCount(biparts[j]) + " " 
-									+ getSupport(biparts[j]) +
-									"  conflicts with bipart " + i + ":\t" +
-									biparts[i].getString() + " " +
-									getCount(biparts[i]) + " " + 
-									getSupport(biparts[i]));
-						}
 					}
 				}
 			}
-		}
-
-		if(debug) {
-			System.out.println("Biparts removed: " + 
-					(biparts.length - retainedBiparts.size()));
 		}
 
 		//create a new array for the Bipartitions in the HashSet
@@ -562,12 +496,6 @@ public class BipartitionSet {
 
 		if(minSupportIndex >= 0) {
 			//create an array with all biparts except the one at minIndex
-			if(debug) {
-				System.out.println("BipartitionSet.removeLeastSupported() removing " +
-						"bipart " + minSupportIndex + ": " + 
-						biparts[minSupportIndex].getString() + " support= " 
-						+ minSupport + " " + biparts[minSupportIndex].getSmallerSide().toString());
-			}
 			r = new Bipartition[biparts.length-1];
 			int secondPartLength = biparts.length - minSupportIndex - 1;
 			System.arraycopy(biparts, 0, r, 0, minSupportIndex);
@@ -597,7 +525,6 @@ public class BipartitionSet {
 	 * support, the Bipartition.
 	 */
 	private void calculateFullSupports() {
-		System.out.println("BipartitionSet.calculateFullSupports()");
 		Bipartition[] biparts = new Bipartition[bipartitionToCount.size()];
 		bipartitionToCount.keySet().toArray(biparts);
 		//these are the number of columns supporting each bipartition
@@ -636,7 +563,6 @@ public class BipartitionSet {
 			Double d = new Double(directSupports[i]);
 			bipartitionToSupport.put(biparts[i], d);
 		}
-		System.out.println("<BipartitionSet.calculateFullSupports()");
 	}
 
 	/**
@@ -646,32 +572,20 @@ public class BipartitionSet {
 	 */
 	private void calculateBipartitionCosts() {
 		Bipartition[] biparts = getBipartitions();
-		if(debug) {
-			System.out.println(">BipartitionSet.calculateBipartitionCosts()");
-		}
 		int[] costs = new int[biparts.length];
 
 		for(int i = 0; i < biparts.length; i++) {
-			if(debug) {
-				System.out.println("calculating cost for bipart " + i);
-			}
 			for(int j = 0; j < biparts.length; j++) {
 				boolean isCompatible = biparts[i].isCompatible(biparts[j]);
 				if(!isCompatible) {
 					costs[i] += getCount(biparts[j]);
 				}
-				//				costs[i] += 
-				//					(biparts[i].getCompatibilityCost(biparts[j]) * 
-				//							getCount(biparts[j]));
 			}
 		}
 
 		bipartitionToCost = new HashMap((int) (biparts.length * 1.25));
 		for(int i = 0; i < biparts.length; i++) {
 			bipartitionToCost.put(biparts[i], new Integer(costs[i]));
-		}
-		if(debug) {
-			System.out.println("<BipartitionSet.calculateBipartitionCosts()");
 		}
 	}
 
@@ -700,7 +614,6 @@ public class BipartitionSet {
 	 */
 	double getSupport(Bipartition bipartition) {
 		double r = Double.NaN;
-		//		System.out.println("getSupport()");
 		if(bipartitionToSupport == null) {
 			calculateFullSupports();
 		}
@@ -710,7 +623,6 @@ public class BipartitionSet {
 		} else {
 			r = support.doubleValue();
 		}
-		//		System.out.println("getSupport() : " + r);
 		return r;
 	}
 
@@ -736,7 +648,7 @@ public class BipartitionSet {
 	}
 
 	/**
-	 * Simple utility to remove unwanted digits from a double.
+	 * Simple convenience method to remove unwanted digits from a double.
 	 * 
 	 * @param d
 	 * @param factor
@@ -772,7 +684,6 @@ public class BipartitionSet {
 	private class BipartitionSupportComparator implements Comparator {
 
 		public int compare(Object o1, Object o2) {
-			//			System.out.println("compare()");
 			int r = 0;
 			double sup1 = getSupport((Bipartition) o1);
 			double sup2 = getSupport((Bipartition) o2);

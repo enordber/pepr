@@ -13,8 +13,6 @@ import edu.vt.vbi.ci.util.file.TextFile;
 
 public class SequenceSetProviderImpl implements SequenceSetProvider {
 
-	private boolean debug = false;
-
 	private FastaSequenceSet[] sequenceSets;
 	private String[] sequenceFileNames;
 
@@ -90,11 +88,6 @@ public class SequenceSetProviderImpl implements SequenceSetProvider {
 				if(fsf != null && fsf.getSequenceCount() >= minTax) {
 					sequenceSetList.add(fsf);
 				}
-				if(debug) {
-					System.out.println("TESTSequenceSetProvider loaded" +
-							" sequence file. sequence count: " +
-							sequenceSets[i].getSequenceCount());
-				}
 			}
 			sequenceSets = new FastaSequenceSet[sequenceSetList.size()];
 			sequenceSetList.toArray(sequenceSets);
@@ -133,12 +126,6 @@ public class SequenceSetProviderImpl implements SequenceSetProvider {
 				if(fsf != null && fsf.getSequenceCount() >= minTax
 						&& fsf.getSequenceCount() <= maxTax) {
 					sequenceSetList.add(fsf);
-				}
-				if(debug) {
-					System.out.println("TESTSequenceSetProvider loaded" +
-							" sequence file. sequence count: " +
-							fsf.getSequenceCount());
-					System.out.println("retained sequence sets: " + sequenceSetList.size());
 				}
 			}
 			sequenceSets = new FastaSequenceSet[sequenceSetList.size()];
