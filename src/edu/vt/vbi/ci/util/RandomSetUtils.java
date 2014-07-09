@@ -3,8 +3,6 @@ package edu.vt.vbi.ci.util;
 import java.util.Arrays;
 import java.util.Random;
 
-import edu.vt.vbi.ci.pepr.stats.Hypergeometric;
-
 public class RandomSetUtils {
 
 	
