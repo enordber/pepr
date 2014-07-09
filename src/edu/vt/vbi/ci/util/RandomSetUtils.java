@@ -59,7 +59,7 @@ public class RandomSetUtils {
 		int[][] r = null;
 		
 		int range = maxValue-minValue;
-		int maxDiffSets = (int) Hypergeometric.getBinomial(range, length);
+		int maxDiffSets = (int) getBinomial(range, length);
 		if(allowReuse || maxDiffSets >= sets) {
 			r = new int[sets][];
 			for(int i = 0; i < r.length; i++) {
@@ -81,4 +81,33 @@ public class RandomSetUtils {
 		}
 		return r;
 	}
+	
+    /**
+     * Returns n choose k.
+     * n! / (k! * (n-k)!)
+     * @param n
+     * @param k
+     * @return
+     */
+    public static double getBinomial(int n, int k) {
+    	    double r = 0;
+    	    //validate n and k
+    	    if(n > 0 && k > 0 && n >= k) {
+    	    	    double currentValue = 1;
+    	    	    
+    	    	    while(k > 0) {
+    	    	    	    double nextFactor = (double)n / (double)k;
+    	    	    	    currentValue *= nextFactor;
+    	    	    	    k--;
+    	    	    	    n--;
+    	    	    }
+    	    	    r = currentValue;
+    	    } else if(k == 0) {
+    	    	    //n choose k is 1 if k = 0
+    	    	    r = 1;
+    	    }
+    	
+    	    return r;
+    }
+
 }
