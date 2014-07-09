@@ -61,10 +61,8 @@ public class FastaSequenceSetImpl implements FastaSequenceSet {
 		HashMap idToIndex = getIDToIndexMap();
 		Integer index = (Integer)idToIndex.get(idToken);
 		if(index != null) {
-			//System.out.print("+");
 			foundIndex = index.intValue();
 		} else {
-			//System.out.print("-");
 			//rapid lookup failed, so do linear search through all titles
 			int offset = 1;
 			if(searchID.startsWith(">")) {
@@ -220,7 +218,6 @@ public class FastaSequenceSetImpl implements FastaSequenceSet {
 			for(int i = 0; i < titles.length; i++) {
 				//get the id token
 				String idToken = getIDToken(titles[i]);
-				//System.out.println("id token: " + idToken);
 				if(idToIndexMap.containsKey(idToken)) {
 					//this is a duplicate id.
 					//remove from map, and add to nonUniqueIDs

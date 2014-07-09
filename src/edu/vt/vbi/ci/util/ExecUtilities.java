@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 public class ExecUtilities {
 
-	private static Logger logger = Logger.getLogger("edu.vt.vbi.ci.util.ExecUtils");
+	private static Logger logger = Logger.getLogger(ExecUtilities.class);
 	/**
 	 * Executes the given command via Runtime.exec()
 	 * and returns the results of stdout and stderr

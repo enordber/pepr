@@ -204,7 +204,6 @@ Comparable{
 	 * @see util.file.FasaSequenceSet#getSequence(int)
 	 */
 	public String[] getSequence(int i) {
-		//System.out.println("FastaSequenceFile.getSequence() " + i);
 		String[] r = null;
 		int firstLine = sequenceStarts[i];
 		int lastLine = -1; //the name lastLine is a bit misleading. this is
@@ -277,10 +276,8 @@ Comparable{
 		HashMap idToIndex = getIDToIndexMap();
 		Integer index = (Integer)idToIndex.get(idToken);
 		if(index != null) {
-//			System.out.print("+");
 			foundIndex = index.intValue();
 		} else {
-//			System.out.print("-");
 			//rapid lookup failed, so do linear search through all titles
 			int offset = 1;
 			if(searchID.startsWith(">")) {
@@ -345,8 +342,6 @@ Comparable{
 		if(end < start) {
 			end = fileName.length();
 		}
-//		System.out.println("FastaSequenceFile.setFileName() " + fileName + 
-//				", start: " + start + " end: " + end);
 		setName(fileName.substring(start, end));
 		fullFileName = fileName;
 	}
