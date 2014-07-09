@@ -68,7 +68,6 @@ public class PhylogeneticTreeBuilder implements Runnable{
 		Random random = new Random(rseed);
 		configFileName = "mbm_config_" + Math.abs(random.nextInt());
 
-		setDefaultConfigurationProperties();
 		addProperties(System.getProperties());
 
 		String bootstrapProp = System.getProperty(HandyConstants.SUPPORT_REPS);
@@ -215,22 +214,6 @@ public class PhylogeneticTreeBuilder implements Runnable{
 	 */
 	public void setConfigProperty(String key, String value) {
 		configProperties.setProperty(key, value);
-	}
-
-	private void setDefaultConfigurationProperties() {
-		configProperties = new Properties();
-
-		configProperties.setProperty(HandyConstants.ALIGN_FILE, "align.in");
-		configProperties.setProperty(HandyConstants.GEN_PER_ROUND, "1000");
-		configProperties.setProperty(HandyConstants.ALIGN_FORMAT, 
-				HandyConstants.FASTA);
-		configProperties.setProperty(HandyConstants.MIN_PRE_BURNIN, "1000");
-		configProperties.setProperty(HandyConstants.MIN_POST_BURNIN, "10000");
-		configProperties.setProperty(HandyConstants.SAMPLE_FREQ, "100");
-		configProperties.setProperty(HandyConstants.TOPOLOGY_TYPE, 
-				HandyConstants.VARIABLE_TOPLOGY);
-		configProperties.setProperty(HandyConstants.NRUNS, "1");
-		configProperties.setProperty(HandyConstants.MB_PATH, "/usr/bin/mb");
 	}
 
 	public String getConfigFileName() {
