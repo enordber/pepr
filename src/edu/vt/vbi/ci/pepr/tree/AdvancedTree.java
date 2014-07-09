@@ -13,7 +13,6 @@ import javax.swing.event.ChangeListener;
 import org.apache.log4j.Logger;
 
 import edu.vt.vbi.ci.util.ExtendedBitSet;
-import edu.vt.vbi.ci.util.JSONUtilities;
 
 /**
  * AdvancedTree may contain one or more BasicTrees. It supports more 
