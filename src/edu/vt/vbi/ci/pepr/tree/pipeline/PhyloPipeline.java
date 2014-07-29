@@ -43,7 +43,7 @@ import edu.vt.vbi.ci.util.file.TextFile;
 public class PhyloPipeline {
 
 
-	private static final Logger logger = Logger.getLogger("PEPR");
+	private static Logger logger;// = Logger.getLogger("PEPR");
 	private static HashMap<String,String> commands;
 	private static long startTime;	
 	static{
@@ -53,6 +53,7 @@ public class PhyloPipeline {
 	private String runName;
 	private int verbose = 1;
 	private String tree;
+	private String[] selectedOutgroupGenomes;
 
 	public static void main(String[] args) {
 		startTime = System.currentTimeMillis();
@@ -62,21 +63,27 @@ public class PhyloPipeline {
 			pp.run();
 		} catch(Exception e) {
 			e.printStackTrace();
-			logger.info("Exiting with an Exception: " + e.toString());
+			if(logger != null) {
+				logger.info("Exiting with an Exception: " + e.toString());
+			}
 		}
 		exit();
 	}
 
 	private static void exit() {
-		logger.info("Exiting");
+		if(logger != null) {
+			logger.info("Exiting");
+		}
 		long endTime = System.currentTimeMillis();
 
 		long elapsedMillis = endTime -startTime;
 		long elapsedSeconds = elapsedMillis/1000;
 		long elapsedMinutes = elapsedSeconds /60;
 		long remainderSeconds = elapsedSeconds%60;
-		logger.info("elapsed time: " + elapsedMinutes + "m " 
-				+ remainderSeconds + "s");
+		if(logger != null) {
+			logger.info("elapsed time: " + elapsedMinutes + "m " 
+					+ remainderSeconds + "s");
+		}
 		System.exit(0);
 	}
 
@@ -86,10 +93,12 @@ public class PhyloPipeline {
 		runName = "pepr-" + System.currentTimeMillis();
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
 
+		String logfile = clp.getValues("logfile")[0];
 		//set log file name, based on run name, if it has not already been set
-		System.setProperty("logfile.name",System.getProperty("logfile.name", runName + ".log"));
+		System.setProperty("logfile.name",System.getProperty("logfile.name", logfile));
+		logger = Logger.getLogger("PEPR");
 		logger.info("Starting " + new Date());
-		System.out.println("logger configured with log file name '" + runName + ".log'");
+		System.out.println("logger configured with log file name '" + System.getProperty("logfile.name"));
 		System.out.println("logger: " + logger);
 
 		boolean printHelp = args == null || args.length == 0 ||
@@ -263,8 +272,11 @@ public class PhyloPipeline {
 		int minIdentity = 10; //for blat def 10
 		int minScore = 15; //for blat def 15
 
+		logger.info("runBlast: " + runBlast);
+
 		TextFile hitPairFile = null;
 		if(runBlast) {
+			logger.info("run blast");
 			hitPairFile = runBlast(homologySearchSequenceFiles, 
 					homologyThreads, hitsPerQuery, evalueCutoff);
 		} else if(runBlat) {
@@ -414,6 +426,11 @@ public class PhyloPipeline {
 			maxTaxa += outgroupCount;
 		}
 
+		for(int i = 0; i < retainedOutgroupHolder[0].length; i++) {
+			logger.info("Selected Outgroup Genome: " + retainedOutgroupHolder[0][i]);
+		}
+		setSelectedOutgroupGenomes(retainedOutgroupHolder[0]);
+
 		//Run the PhylogenomicPipeline2.jar. The naming here is going to get
 		//confusing, and probably needs to be addressed. This is the part that
 		//filters the Homolog Groups for representative groups and for 
@@ -465,6 +482,27 @@ public class PhyloPipeline {
 		if(refine) {
 			refineTree(firstRoundTree, clp, inputSequenceFiles, outgroupSequenceFiles);
 		}
+
+		printTreeAndOutgroupFile();
+	}
+
+	private void printTreeAndOutgroupFile() {
+		String fileName = runName + ".tog";
+		try {
+			String[] outgroups = getSelectedOutgroupGenomes();
+			FileWriter fw = new FileWriter(fileName);
+			fw.write("tree[\'" + runName + "\'] = \""+ getTree() + "\"\n");
+			fw.write("outgroup[\'" + runName + "\'] = [\"" + outgroups[0] + "\"");
+			for(int i = 1; i < outgroups.length; i++) {
+				fw.write(", [\"" + outgroups[i] + "\"");
+			}
+			fw.write("]\n");
+			fw.flush();
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	private void setTree(String tree) {
@@ -480,6 +518,7 @@ public class PhyloPipeline {
 		PhylogeneticTreeRefiner refiner = 
 				new PhylogeneticTreeRefiner(initialTree, clp, 
 						ingroupSequences, outgroupSequences);
+		setTree(refiner.getMostRefinedTreeString());
 	}
 
 	/**
@@ -499,21 +538,24 @@ public class PhyloPipeline {
 		Pattern spacePat = Pattern.compile("_");
 		String space = " ";
 		for(int i = 0; i < homologySearchSequenceFiles.length; i++) {
-			String taxon = homologySearchSequenceFiles[i].getTaxa()[0];
-			String[] taxonTokens = spacePat.split(taxon);
-			if(taxonTokens.length > 1) {
-				String species = taxonTokens[0] + space + taxonTokens[1];
-				if(!speciesKept.containsKey(species)) {
-					keepFiles.add(homologySearchSequenceFiles[i]);
-					speciesKept.put(species,homologySearchSequenceFiles[i]);
-				}
-				else {
-					FastaSequenceFile previouSpeciesFile = 
-							(FastaSequenceFile)speciesKept.get(species);
-					int previousGeneCount = previouSpeciesFile.getSequenceCount();
-					int currentGeneCount = homologySearchSequenceFiles[i].getSequenceCount();
-					if(currentGeneCount > previousGeneCount) {
-						speciesKept.put(species, homologySearchSequenceFiles[i]);
+			String[] taxa =  homologySearchSequenceFiles[i].getTaxa();
+			if(taxa != null && taxa.length > 0) {
+				String taxon = taxa[0];
+				String[] taxonTokens = spacePat.split(taxon);
+				if(taxonTokens.length > 1) {
+					String species = taxonTokens[0] + space + taxonTokens[1];
+					if(!speciesKept.containsKey(species)) {
+						keepFiles.add(homologySearchSequenceFiles[i]);
+						speciesKept.put(species,homologySearchSequenceFiles[i]);
+					}
+					else {
+						FastaSequenceFile previouSpeciesFile = 
+								(FastaSequenceFile)speciesKept.get(species);
+						int previousGeneCount = previouSpeciesFile.getSequenceCount();
+						int currentGeneCount = homologySearchSequenceFiles[i].getSequenceCount();
+						if(currentGeneCount > previousGeneCount) {
+							speciesKept.put(species, homologySearchSequenceFiles[i]);
+						}
 					}
 				}
 			}
@@ -825,6 +867,7 @@ public class PhyloPipeline {
 	 */
 	private TextFile runBlast(FastaSequenceFile[] inputSequenceFiles, 
 			int threads, int hitsPerQuery, float evalue) {
+		logger.info("run blast");
 		TextFile r = null;
 		BlastRunner br = new BlastRunner();
 		br.setSequenceSets(inputSequenceFiles);
@@ -836,6 +879,7 @@ public class PhyloPipeline {
 		br.setRunName(runName);
 		br.run();
 		r = br.getResults();
+		logger.info("blast complete");
 
 		return r;
 	}
@@ -1178,5 +1222,13 @@ public class PhyloPipeline {
 		}
 
 		StatisticsUtilities.printDistribution(fieldCounts);
+	}
+
+	private String[] getSelectedOutgroupGenomes() {
+		return selectedOutgroupGenomes;
+	}
+
+	private void setSelectedOutgroupGenomes(String[] selectedOutgroupGenomes) {
+		this.selectedOutgroupGenomes = selectedOutgroupGenomes;
 	}
 }
