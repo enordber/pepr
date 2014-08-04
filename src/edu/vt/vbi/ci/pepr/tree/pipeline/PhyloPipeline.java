@@ -491,12 +491,14 @@ public class PhyloPipeline {
 		try {
 			String[] outgroups = getSelectedOutgroupGenomes();
 			FileWriter fw = new FileWriter(fileName);
-			fw.write("tree[\'" + runName + "\'] = \""+ getTree() + "\"\n");
-			fw.write("outgroup[\'" + runName + "\'] = [\"" + outgroups[0] + "\"");
-			for(int i = 1; i < outgroups.length; i++) {
-				fw.write(", [\"" + outgroups[i] + "\"");
+			fw.write("trees[\'" + runName + "\'] = \""+ getTree() + "\";\n");
+			if(outgroups != null && outgroups.length > 0) {
+				fw.write("outgroups[\'" + runName + "\'] = [\"" + outgroups[0] + "\"");
+				for(int i = 1; i < outgroups.length; i++) {
+					fw.write(", \"" + outgroups[i] + "\"");
+				}
+				fw.write("];\n");
 			}
-			fw.write("]\n");
 			fw.flush();
 			fw.close();
 		} catch (IOException e) {
@@ -549,9 +551,9 @@ public class PhyloPipeline {
 						speciesKept.put(species,homologySearchSequenceFiles[i]);
 					}
 					else {
-						FastaSequenceFile previouSpeciesFile = 
+						FastaSequenceFile previousSpeciesFile = 
 								(FastaSequenceFile)speciesKept.get(species);
-						int previousGeneCount = previouSpeciesFile.getSequenceCount();
+						int previousGeneCount = previousSpeciesFile.getSequenceCount();
 						int currentGeneCount = homologySearchSequenceFiles[i].getSequenceCount();
 						if(currentGeneCount > previousGeneCount) {
 							speciesKept.put(species, homologySearchSequenceFiles[i]);
