@@ -22,6 +22,7 @@ public class PhylogeneticTreeRefiner {
 	private String runName;
 	private int refineRound = 0;
 	private static Logger logger = Logger.getLogger(PhylogeneticTreeRefiner.class);
+	private String mostRefinedTreeString;
 
 
 	public static void main(String[] args) {
@@ -83,6 +84,8 @@ public class PhylogeneticTreeRefiner {
 		int threadCount = Integer.parseInt(clp.getValues(HandyConstants.MAX_CONCURRENT_PROCESS_PARAM, "1")[0]);
 		logger.info("initialTree string: " + initialTree.trim());
 
+		setMostRefinedTreeString(initialTree);
+		
 		int requiredSpeciesForUniqueSpeciesFilter = 5;
 		
 		//create taxonToFileName map
@@ -239,8 +242,12 @@ public class PhylogeneticTreeRefiner {
 			refiningTree = refiningTree.replaceNode(refinedSubTree.getBasicTree());
 			refiningTree.unroot();
 
+			String refinedFullTreeString = refiningTree.getTreeString(true, true);
+			setMostRefinedTreeString(refinedFullTreeString);
+			
 			logger.info("refiningTree with node " + nextRefineIndex + 
-					" refined: " + refiningTree.getTreeString(true, true));
+					" refined: ");
+			logger.info(refinedFullTreeString);
 			logger.info("refiningTree leaf count: " + 
 					refiningTree.getLeafLabels().length);
 
@@ -351,6 +358,14 @@ public class PhylogeneticTreeRefiner {
 			r[i] = new FastaSequenceFile(sequenceFileNames[i]);
 		}
 		return r;
+	}
+
+	public String getMostRefinedTreeString() {
+		return mostRefinedTreeString;
+	}
+
+	private void setMostRefinedTreeString(String mostRefinedTreeString) {
+		this.mostRefinedTreeString = mostRefinedTreeString;
 	}
 
 }

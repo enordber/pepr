@@ -68,6 +68,7 @@ public class PhylogeneticTreeBuilder implements Runnable{
 		Random random = new Random(rseed);
 		configFileName = "mbm_config_" + Math.abs(random.nextInt());
 
+		configProperties = new Properties();
 		addProperties(System.getProperties());
 
 		String bootstrapProp = System.getProperty(HandyConstants.SUPPORT_REPS);
