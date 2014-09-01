@@ -93,7 +93,7 @@ public class PhyloPipeline {
 		runName = "pepr-" + System.currentTimeMillis();
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
 
-		String logfile = clp.getValues("logfile")[0];
+		String logfile = clp.getValues("logfile", "pepr.log")[0];
 		//set log file name, based on run name, if it has not already been set
 		System.setProperty("logfile.name",System.getProperty("logfile.name", logfile));
 		logger = Logger.getLogger("PEPR");
