@@ -96,4 +96,5 @@ public interface HandyConstants {
 	public static final String HMM_THREADS = "hmm_threads";
 	public static final String BLASTN = "blastn";
 	public static final String AVAILABLE_RAM = "available_ram";
+	public static final String PATRIC = "patric";
 }

@@ -24,6 +24,7 @@ import edu.vt.vbi.ci.util.HandyConstants;
 import edu.vt.vbi.ci.util.IntPair;
 import edu.vt.vbi.ci.util.SequenceSetExtractor;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
+import edu.vt.vbi.ci.util.file.FastaUtilities;
 import edu.vt.vbi.ci.util.file.TextFile;
 
 /**
@@ -165,6 +166,10 @@ public class PhyloPipeline {
 			logger.log(Level.DEBUG,e.getMessage());
 		}
 
+		if(clp.getValues(HandyConstants.PATRIC, HandyConstants.FALSE)[0].equals(HandyConstants.TRUE)) {
+			FastaUtilities.setStripPipeAndSuffix(false);
+		}
+		
 		//Determine number of Threads to use. By default, every thread parameter
 		//will be set to the number of processors available.
 		int maxThreads = Runtime.getRuntime().availableProcessors();
