@@ -37,7 +37,7 @@ public class FastaUtilities {
 					taxa[i] = taxa[i].substring(0, pipeIndex).trim();
 				}
 			} else {
-				taxa[1] = taxa[i].replaceAll("|", "@");
+				taxa[i] = taxa[i].replaceAll("\\|", "@");
 			}
 
 			//replace forbidden characters with underscore
