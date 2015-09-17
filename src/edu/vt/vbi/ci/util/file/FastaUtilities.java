@@ -15,8 +15,6 @@ public class FastaUtilities {
 	 */
 	public static String[] getTaxaFromTitles(String[] titles) {
 		String[] taxa = new String[titles.length];
-		String openSB = " [";
-		String closeSB = "]";
 		String[] forbiddenChars = new String[]{
 				" ",
 				"\\(",

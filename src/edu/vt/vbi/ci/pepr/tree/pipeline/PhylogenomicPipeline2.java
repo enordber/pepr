@@ -29,6 +29,7 @@ import edu.vt.vbi.ci.pepr.tree.TreeBuilderComparator;
 import edu.vt.vbi.ci.pepr.tree.TreeSupportDecorator;
 import edu.vt.vbi.ci.util.CommandLineProperties;
 import edu.vt.vbi.ci.util.HandyConstants;
+import edu.vt.vbi.ci.util.PEPRTracker;
 import edu.vt.vbi.ci.util.RandomSetUtils;
 import edu.vt.vbi.ci.util.file.FastaSequenceSet;
 import edu.vt.vbi.ci.util.file.FastaUtilities;
@@ -325,7 +326,7 @@ public class PhylogenomicPipeline2 {
 
 		String concatenatedTreeMethod = 
 			commandLineProperties.getValues(
-					HandyConstants.CONCATENATED_TREE_METHOD,
+					HandyConstants.FULL_TREE_METHOD,
 					HandyConstants.MAXIMUM_LIKELIHOOD)[0];
 
 		String supportTreeMethod = 
@@ -627,7 +628,7 @@ public class PhylogenomicPipeline2 {
 		"For tree support values, build trees from a subset of the genes used for the full tree. ");
 		commands.put(HandyConstants.TREE_THREADS, 
 		"Number of processes to use for tree building step(s)");
-		commands.put(HandyConstants.CONCATENATED_TREE_METHOD, 
+		commands.put(HandyConstants.FULL_TREE_METHOD, 
 				"Method used to build full concatenated tree. Default is Parsimony with Maximum Likelihood branch lengths (\"" + HandyConstants.PARSIMONY_BL + "\"). The other options are Maximum Likelihood (\"" + HandyConstants.MAXIMUM_LIKELIHOOD + "\") and FastTree (\"" + HandyConstants.FAST_TREE + "\")");
 		commands.put(HandyConstants.SUPPORT_TREE_METHOD, 
 				"Method used for building support trees (trees used for branch support values fo the full tree). Default is Parsimony (\"" + HandyConstants.PARSIMONY + "\"). The other current option is Maximum Likelihood (\"" + HandyConstants.MAXIMUM_LIKELIHOOD + "\")");
@@ -826,6 +827,10 @@ public class PhylogenomicPipeline2 {
 		logger.info("\tcharacters: " + 
 				concatenatedAlignment.getLength());
 
+		PEPRTracker.setTaxonNumber(concatenatedAlignment.getNTax());
+		PEPRTracker.setGeneNumber(concatenatedAlignment.getAlignments().length);
+		PEPRTracker.setAlignedPositions(concatenatedAlignment.getLength());
+		
 		PhylogeneticTreeBuilder treeBuilder = createPhylogeneticTreeBuilder();
 		if(concatenatedTreeMethod.equals(HandyConstants.MAXIMUM_LIKELIHOOD)) {
 			treeBuilder.setTreeBuildingMethod(HandyConstants.MAXIMUM_LIKELIHOOD);

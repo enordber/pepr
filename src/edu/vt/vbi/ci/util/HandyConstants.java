@@ -52,7 +52,7 @@ public interface HandyConstants {
 	public static final String GENE_WISE_JACKKNIFE = "gene_wise_jackknife";
 	public static final String TREE_THREADS = "tree_threads";
 	public static final String NEIGHBOR_JOINING = "nj";
-	public static final String CONCATENATED_TREE_METHOD = "concatenated_tree_method";
+	public static final String FULL_TREE_METHOD = "full_tree_method";
 	public static final String SUPPORT_TREE_METHOD = "support_tree_method";
 	public static final String MAXIMUM_LIKELIHOOD = "ml";
 	public static final String TARGET_MIN_GENE_COUNT = "target_min_gene";

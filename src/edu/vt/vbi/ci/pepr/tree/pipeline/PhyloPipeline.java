@@ -22,6 +22,7 @@ import edu.vt.vbi.ci.util.CommandResults;
 import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
 import edu.vt.vbi.ci.util.IntPair;
+import edu.vt.vbi.ci.util.PEPRTracker;
 import edu.vt.vbi.ci.util.SequenceSetExtractor;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
 import edu.vt.vbi.ci.util.file.FastaUtilities;
@@ -44,7 +45,7 @@ import edu.vt.vbi.ci.util.file.TextFile;
 public class PhyloPipeline {
 
 
-	private static Logger logger;// = Logger.getLogger("PEPR");
+	private static Logger logger;
 	private static HashMap<String,String> commands;
 	private static long startTime;	
 	static{
@@ -93,6 +94,7 @@ public class PhyloPipeline {
 		//set runName
 		runName = "pepr-" + System.currentTimeMillis();
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
+		PEPRTracker.newTree(runName);
 
 		String logfile = clp.getValues("logfile", "pepr.log")[0];
 		//set log file name, based on run name, if it has not already been set
@@ -224,6 +226,8 @@ public class PhyloPipeline {
 			e.printStackTrace();
 			logger.log(Level.DEBUG,e.getMessage());
 		}
+		
+		PEPRTracker.setInputSequenceFiles(inputSequenceFiles);
 
 		//find out if blast/blat searches should use only a single member
 		//from each species. If true, then inputSequenceFiles will be filtered
@@ -334,8 +338,7 @@ public class PhyloPipeline {
 
 		//Create input file for MCL: ID1	ID2	score
 
-		//Run MCL - optionally try various inflation values and select
-		//the result that creates the most sets of size=number of taxa
+		//Run MCL
 		String inflation = clp.getValues(HandyConstants.INFLATION, "1.5")[0];
 		TextFile mclResult = runMCL(hitPairFile, inflation, mclThreads);
 
@@ -405,6 +408,7 @@ public class PhyloPipeline {
 			}
 		}
 
+		PEPRTracker.setOutgroupPoolSequenceFiles(outgroupSequenceFiles);
 		int outgroupCount = Integer.parseInt(clp.getValues(HandyConstants.OUTGROUP_COUNT, ""+outgroupSequenceFiles.length)[0]);
 
 		Arrays.sort(inputSequenceFiles);
@@ -440,9 +444,7 @@ public class PhyloPipeline {
 		//confusing, and probably needs to be addressed. This is the part that
 		//filters the Homolog Groups for representative groups and for 
 		//certain numbers of taxa, then does alignment, alignment trimming,
-		//and tree-building. Eventually, this should be done all within a 
-		//single class, but right now I am just trying to move code over
-		//from perl to java, and not trying to fix every single problem.
+		//and tree-building.
 
 		long hgTime = System.currentTimeMillis();
 		long elapsedMillis = hgTime -startTime;
@@ -488,6 +490,7 @@ public class PhyloPipeline {
 			refineTree(firstRoundTree, clp, inputSequenceFiles, outgroupSequenceFiles);
 		}
 
+		PEPRTracker.setTree(getTree());
 		printTreeAndOutgroupFile();
 	}
 
@@ -829,7 +832,7 @@ public class PhyloPipeline {
 		r = new TextFile(filteredFileName);
 		if(verbose > 0) {
 			logger.info("Done filtering for columns. " +
-					r.getLineCount() + " liens in file");
+					r.getLineCount() + " lines in file");
 		}
 		return r;
 	}
@@ -845,9 +848,6 @@ public class PhyloPipeline {
 	private TextFile runBlat(FastaSequenceFile[] inputSequenceFiles, 
 			int threads, int hitsPerQuery, float evalue, int minIdentity,
 			int minScore) {
-		if(verbose > 0) {
-			logger.info("run blat");
-		}
 		TextFile r = null;
 		BlatRunner br = new BlatRunner();
 		br.setSequenceSets(inputSequenceFiles);
@@ -874,7 +874,6 @@ public class PhyloPipeline {
 	 */
 	private TextFile runBlast(FastaSequenceFile[] inputSequenceFiles, 
 			int threads, int hitsPerQuery, float evalue) {
-		logger.info("run blast");
 		TextFile r = null;
 		BlastRunner br = new BlastRunner();
 		br.setSequenceSets(inputSequenceFiles);
@@ -886,13 +885,12 @@ public class PhyloPipeline {
 		br.setRunName(runName);
 		br.run();
 		r = br.getResults();
-		logger.info("blast complete");
 
 		return r;
 	}
 
 	private String[] getDistinctTaxa(FastaSequenceFile[] inputSequenceFiles) {
-		HashSet uniqueTaxa = new HashSet();
+		HashSet<String> uniqueTaxa = new HashSet<String>();
 
 		for(int i = 0; i < inputSequenceFiles.length; i++) {
 			String[] taxa = inputSequenceFiles[i].getTaxa();
@@ -914,150 +912,50 @@ public class PhyloPipeline {
 		return r;
 	}
 
-	private String[] getDefaultParameters() {
-		String[] r = null;
-
-		return r;
-	}
-
 	public static String[] getTrackProperties(String track) {
 		String[] r = null;
+		ArrayList<String> propertyLines = new ArrayList<String>();
+		propertyLines.add("-" + HandyConstants.HOMOLOGY_SEARCH_METHOD);
+		propertyLines.add(HandyConstants.BLAST);
+		propertyLines.add("-" + HandyConstants.BIDIRECTIONAL);
+		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add("-" + HandyConstants.CONCATENATED);
+		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add("-" + HandyConstants.FULL_TREE_METHOD);
+		propertyLines.add(HandyConstants.MAXIMUM_LIKELIHOOD);
+		propertyLines.add("-" + HandyConstants.SUPPORT_TREE_METHOD);
+		propertyLines.add(HandyConstants.FAST_TREE);
+		propertyLines.add("-" + HandyConstants.GENE_WISE_JACKKNIFE);
+		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add("-" + HandyConstants.SUPPORT_REPS);
+		propertyLines.add("100");
+		propertyLines.add("-" + HandyConstants.UNIFORM_TRIM);
+		propertyLines.add(HandyConstants.FALSE);
+		propertyLines.add("-" + HandyConstants.GBLOCKS_TRIM);
+		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add("-" + HandyConstants.PREALIGN);
+		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add("-" + HandyConstants.TARGET_MIN_GENE_COUNT);
+		propertyLines.add("500");
+		propertyLines.add("-" + HandyConstants.MIN_TAXA_MULTIPLIER);
+		propertyLines.add("0.8");
+		propertyLines.add("-" + HandyConstants.UNIQUE_SPECIES);
+		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add("-" + HandyConstants.CONGRUENCE_FILTER);
+		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add("-" + HandyConstants.REFINE);
+		propertyLines.add(HandyConstants.TRUE);
 
-		if(track.equals(HandyConstants.TRACK_BLAT_FAST)) {
+		if(track.equals(HandyConstants.TRACK_BLAST_FAST)){
 			r = new String[]{
-					"-" + HandyConstants.HOMOLOGY_SEARCH_METHOD,
-					HandyConstants.BLAT,
-					"-" + HandyConstants.BIDIRECTIONAL,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED_TREE_METHOD,
-					HandyConstants.FAST_TREE,
-					"-" + HandyConstants.SUPPORT_TREE_METHOD,
-					HandyConstants.FAST_TREE,
-					"-" + HandyConstants.GENE_WISE_JACKKNIFE,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.SUPPORT_REPS,
-					"100",
-					"-" + HandyConstants.UNIFORM_TRIM,
-					HandyConstants.FALSE,
-					"-" + HandyConstants.GBLOCKS_TRIM,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.PREALIGN,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.TARGET_MIN_GENE_COUNT,
-					"500",
-					"-" + HandyConstants.MIN_TAXA_MULTIPLIER,
-					"0.8",
+					"-" + HandyConstants.FULL_TREE_METHOD,
+					HandyConstants.FAST_TREE,					
 					"-" + HandyConstants.FULL_TREE_THREADS,
 					"1", 
-					"-" + HandyConstants.UNIQUE_SPECIES,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONGRUENCE_FILTER,
-					HandyConstants.TRUE
 			};
-		} else if(track.equals(HandyConstants.TRACK_BLAST_FAST)){
-			r = new String[]{
-					"-" + HandyConstants.HOMOLOGY_SEARCH_METHOD,
-					HandyConstants.BLAST,
-					"-" + HandyConstants.BIDIRECTIONAL,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED_TREE_METHOD,
-					HandyConstants.FAST_TREE,
-					"-" + HandyConstants.SUPPORT_TREE_METHOD,
-					HandyConstants.FAST_TREE,
-					"-" + HandyConstants.GENE_WISE_JACKKNIFE,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.SUPPORT_REPS,
-					"100",
-					"-" + HandyConstants.UNIFORM_TRIM,
-					HandyConstants.FALSE,
-					"-" + HandyConstants.GBLOCKS_TRIM,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.PREALIGN,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.TARGET_MIN_GENE_COUNT,
-					"500",
-					"-" + HandyConstants.MIN_TAXA_MULTIPLIER,
-					"0.8",
-					"-" + HandyConstants.FULL_TREE_THREADS,
-					"1", 
-					"-" + HandyConstants.UNIQUE_SPECIES,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONGRUENCE_FILTER,
-					HandyConstants.TRUE
-			};
-		} else if(track.equals(HandyConstants.TRACK_BLAT_RAXML)){
-			r = new String[]{
-					"-" + HandyConstants.HOMOLOGY_SEARCH_METHOD,
-					HandyConstants.BLAT,
-					"-" + HandyConstants.BIDIRECTIONAL,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED_TREE_METHOD,
-					HandyConstants.MAXIMUM_LIKELIHOOD,
-					"-" + HandyConstants.SUPPORT_TREE_METHOD,
-					HandyConstants.FAST_TREE,
-					"-" + HandyConstants.GENE_WISE_JACKKNIFE,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.SUPPORT_REPS,
-					"100",
-					"-" + HandyConstants.UNIFORM_TRIM,
-					HandyConstants.FALSE,
-					"-" + HandyConstants.GBLOCKS_TRIM,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.PREALIGN,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.TARGET_MIN_GENE_COUNT,
-					"500",
-					"-" + HandyConstants.MIN_TAXA_MULTIPLIER,
-					"0.8",
-					//					"-" + HandyConstants.FULL_TREE_THREADS,
-					//					"1", 
-					"-" + HandyConstants.UNIQUE_SPECIES,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONGRUENCE_FILTER,
-					HandyConstants.TRUE
-			};
-		} else if(track.equals(HandyConstants.TRACK_BLAST_RAXML)) {
-			r = new String[]{
-					"-" + HandyConstants.HOMOLOGY_SEARCH_METHOD,
-					HandyConstants.BLAST,
-					"-" + HandyConstants.BIDIRECTIONAL,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONCATENATED_TREE_METHOD,
-					HandyConstants.MAXIMUM_LIKELIHOOD,
-					"-" + HandyConstants.SUPPORT_TREE_METHOD,
-					HandyConstants.FAST_TREE,
-					"-" + HandyConstants.GENE_WISE_JACKKNIFE,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.SUPPORT_REPS,
-					"100",
-					"-" + HandyConstants.UNIFORM_TRIM,
-					HandyConstants.FALSE,
-					"-" + HandyConstants.GBLOCKS_TRIM,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.PREALIGN,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.TARGET_MIN_GENE_COUNT,
-					"500",
-					"-" + HandyConstants.MIN_TAXA_MULTIPLIER,
-					"0.8",
-					//					"-" + HandyConstants.FULL_TREE_THREADS,
-					//					"1", 
-					"-" + HandyConstants.UNIQUE_SPECIES,
-					HandyConstants.TRUE,
-					"-" + HandyConstants.CONGRUENCE_FILTER,
-					HandyConstants.TRUE
-			};
-		} else {
-			r = new String[0];
 		}
+		
+		r = propertyLines.toArray(new String[0]);
 		return r;
 	}
 
@@ -1093,7 +991,7 @@ public class PhyloPipeline {
 		commands.put(HandyConstants.CONCATENATED, 
 				"Build a single tree from the concatenation of all alignments");
 		commands.put(HandyConstants.SUPPORT_REPS, 
-				"Number of bootstrap replicates to perform");
+				"Number of support replicates to perform");
 		commands.put(HandyConstants.HELP, 
 				"\tPrint this help.");
 		commands.put(HandyConstants.DIRECTORY, 
@@ -1102,7 +1000,7 @@ public class PhyloPipeline {
 				"For tree support values, build trees from a subset of the genes used for the full tree. ");
 		commands.put(HandyConstants.TREE_THREADS, 
 				"Number of processes to use for tree building step(s)");
-		commands.put(HandyConstants.CONCATENATED_TREE_METHOD, 
+		commands.put(HandyConstants.FULL_TREE_METHOD, 
 				"Method used to build full concatenated tree. Default is Maximum Likelihood (\"" + HandyConstants.MAXIMUM_LIKELIHOOD + "\"). The other options are Parsimony with Maximum Likelihood branch lengths (\"" + HandyConstants.PARSIMONY_BL + "\") and FastTree (\"" + HandyConstants.FAST_TREE + "\")");
 		commands.put(HandyConstants.SUPPORT_TREE_METHOD, 
 				"Method used for building support trees (trees used for branch support values fo the full tree). Default is FastTree (\"" + HandyConstants.FAST_TREE + "\"). The other options are Maximum Likelihood (\"" + HandyConstants.MAXIMUM_LIKELIHOOD + "\") and Parsimony (\""+ HandyConstants.PARSIMONY + "\").");
@@ -1126,8 +1024,8 @@ public class PhyloPipeline {
 				"Provide an optional run name for. Output files will contain this name, making it easier to track the results. If no run name is provided, one will be automatically generated.");
 		commands.put(HandyConstants.MIN_TAXA_MULTIPLIER, 
 				"Proportion of max_taxa to be used as a minimum taxa value. Sequence sets with fewer taxa are not included in tree building. Default is 0.8");
-		commands.put(HandyConstants.TRACK, "\tSpecify a pre-defined track (set of options) to use. Tracks are identified by the sequence similarity search program used and the tree-building program used. Track options are:\n" +
-				"\t\t\t\t\t\tblat_fast\n\t\t\t\t\t\tblast_fast\n\t\t\t\t\t\tblat_raxml\n\t\t\t\t\t\tblast_raxml");
+//		commands.put(HandyConstants.TRACK, "\tSpecify a pre-defined track (set of options) to use. Tracks are identified by the sequence similarity search program used and the tree-building program used. Track options are:\n" +
+//				"\t\t\t\t\t\tblat_fast\n\t\t\t\t\t\tblast_fast\n\t\t\t\t\t\tblat_raxml\n\t\t\t\t\t\tblast_raxml");
 	}
 
 	/**
@@ -1150,7 +1048,7 @@ public class PhyloPipeline {
 		logger.info("Check for required programs...");
 		String[] requiredPrograms = new String[]{
 				"blastall",
-				"blat",
+//				"blat",
 				"formatdb",
 				"FastTree",
 				"FastTree_WAG",

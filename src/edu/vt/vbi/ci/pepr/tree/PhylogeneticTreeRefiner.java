@@ -128,7 +128,7 @@ public class PhylogeneticTreeRefiner {
 		int refiningRound = 0;
 		while(nextRefineIndex > -1) {
 			refiningRound++;
-			logger.info("tree refining round " + refiningRound);
+			logger.info("tree refining round: " + refiningRound);
 			//get ingroup sequences for subtree
 			String[] descendants = refiningTree.getDescendantLeaves(nextRefineIndex);
 

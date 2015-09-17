@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -562,7 +563,7 @@ public class TreeComparison {
 		}
 	}
 
-	private int getRFDistance(TreeI tree1, TreeI tree2) {
+	static int getRFDistance(TreeI tree1, TreeI tree2) {
 		int r = -1;
 		r = tree1.getRobinsonFouldsDistance(tree2);
 		return r;
@@ -602,7 +603,7 @@ public class TreeComparison {
 	 * 
 	 * @return
 	 */
-	private double getBranchDistance(TreeI tree1, TreeI tree2) {
+	static double getBranchDistance(TreeI tree1, TreeI tree2) {
 		double r = 0;
 		boolean normalizeBranchLengths = true;
 		double sumOfSquaresTree1 = 0;
@@ -614,8 +615,10 @@ public class TreeComparison {
 
 		TreeBranch[] tree1Branches = tree1.getBranches();
 		double[] tree1BranchLengths = new double[tree1Branches.length];
+		double[] tree1BranchSupports = new double[tree1Branches.length];
 		for(int i= 0; i < tree1Branches.length; i++) {
 			tree1BranchLengths[i] = tree1Branches[i].getBranchLength();
+			tree1BranchSupports[i] = tree1Branches[i].getBranchSupport();
 			HashSet[] leafSets = tree1Branches[i].getBipartitionLeafSets();
 			for(int j = 0; j < leafSets.length; j++) {
 				tree1SetsToBranches.put(leafSets[j], tree1Branches[i]);
@@ -649,20 +652,74 @@ public class TreeComparison {
 
 		//check each tree1 branch for a counterpart in tree2. Add square of the 
 		//difference in the branch lengths
+		ArrayList<Double> removedBranchSupports = new ArrayList<Double>();
 		for(int i = 0; i < tree1Branches.length; i++) {
 			double counterpartLength = 0;
-			HashSet[] leafSets = tree1Branches[i].getBipartitionLeafSets();
-			TreeBranch counterpart = (TreeBranch) tree2SetsToBranches.get(leafSets[0]);
-			if(counterpart != null) {
-				counterpartLength = counterpart.getBranchLength()/tree2MaxLength ;
+			TreeBranch tree1Branch = tree1Branches[i];
+			HashSet[] leafSets = tree1Branch.getBipartitionLeafSets();
+			double tree1Support = tree1Branch.getBranchSupport();
+			TreeBranch counterpartBranch = (TreeBranch) tree2SetsToBranches.get(leafSets[1]);
+			if(counterpartBranch != null) {
+				counterpartLength = counterpartBranch.getBranchLength()/tree2MaxLength ;
+				if((tree1Support == tree1Support || tree1BranchSupports[i] == tree1BranchSupports[i]) && tree1Support != tree1BranchSupports[i]) {
+					System.out.println("branch supports for branch " + i + " disagree. " + tree1BranchSupports[i] + " -- " + tree1Support);
+				}
+				double tree2Support = counterpartBranch.getBranchSupport();
+				if(tree1Support == tree1Support && tree1Support + tree2Support < 200) {
+					HashSet smallerLeafSet = leafSets[0];
+					if(leafSets[1].size() < leafSets[0].size()) {
+						smallerLeafSet = leafSets[1];
+					}
+
+					HashSet[] counterpartLeafSets = counterpartBranch.getBipartitionLeafSets();
+					HashSet smallerCounterpartLeafSet = counterpartLeafSets[0];
+					if(counterpartLeafSets[1].size() < counterpartLeafSets[0].size()) {
+						smallerCounterpartLeafSet = counterpartLeafSets[1];
+					}
+//					System.out.println(smallerLeafSet);
+//					System.out.println(smallerCounterpartLeafSet);
+//					System.out.println("counterpart found for tree1Branches " + i + " size: " + smallerLeafSet.size() + ", " 
+//						 + tree1Support + " --> " + tree2Support);
+				}
+			} else {
+				System.out.println("Branch removed. Initial support: " + tree1Support);
+				removedBranchSupports.add(tree1Support);
 			}
 			double branchLength = tree1BranchLengths[i];
 			sumOfSquaresTree1 += branchLength*branchLength;
 			double difference = branchLength - counterpartLength;
 			r += difference*difference;
 
-			checkedBranches.add(counterpart);
+			checkedBranches.add(counterpartBranch);
 		}
+		double[] removedSupports = new double[removedBranchSupports.size()];
+		double sum = 0;
+		for(int i = 0; i < removedSupports.length; i++) {
+			removedSupports[i] = removedBranchSupports.get(i);
+			sum += removedSupports[i];
+		}
+		double meanRemovedSupport = sum / removedSupports.length;
+		Arrays.sort(removedSupports);
+		for(int i = 0; i< removedSupports.length; i++) {
+			System.out.println(removedSupports[i]);
+		}
+		double medianRemovedSupport = removedSupports[removedSupports.length/2];
+		System.out.println("median support value of removed branches: " + medianRemovedSupport);
+		System.out.println("mean support value of removed branches: " + meanRemovedSupport);
+		
+		ArrayList<Double> tree1NonNanSupports = new ArrayList<Double>();
+		sum = 0;
+		for(int i = 0; i < tree1BranchSupports.length; i++) {
+			if(tree1BranchSupports[i] == tree1BranchSupports[i]) {
+				tree1NonNanSupports.add(tree1BranchSupports[i]);
+				sum += tree1BranchSupports[i];
+			}
+		}
+		Collections.sort(tree1NonNanSupports);
+		double medianAll = tree1NonNanSupports.get(tree1NonNanSupports.size()/2);
+		double meanAll = sum / tree1NonNanSupports.size();
+		System.out.println("median support value of all branches in tree1: " + medianAll);
+		System.out.println("mean support value of all branches in tree1: " + meanAll);
 
 		//add any tree2 branches that have not already been handled. Because 
 		//these have not been handled, it means they don't have a counterpart

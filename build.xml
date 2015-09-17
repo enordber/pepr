@@ -10,7 +10,6 @@
   <property name="lib"  location="lib"/>
   <property name="scripts"  location="scripts"/>
   
-  <!-- define path structures: project.classpath and war.lib -->
   <path id="project.classpath">
           <fileset dir="lib" includes="*.jar" />
   </path>
@@ -25,7 +24,7 @@
   <target name="compile" depends="init"
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
-    <javac srcdir="${src}" classpathref="project.classpath" destdir="${build}"/>
+    <javac debug="true" srcdir="${src}" classpathref="project.classpath" destdir="${build}"/>
   </target>
 
   <target name="dist" depends="compile"
@@ -37,14 +36,24 @@
     <jar jarfile="${dist}/pepr/lib/pepr.jar" basedir="${build}"/>
 
   	<!-- copy everything to dist directory for tar -->
-    <copy todir="${dist}/pepr/bin_mac">
+ <!--
+  	<copy todir="${dist}/pepr/bin_mac">
       <fileset dir="${bin}_mac"/>
     </copy>
-    
+ -->
+  	<exec executable="cp">
+  	    <arg line="-R ${bin}_mac ${dist}/pepr/bin_mac"/>
+  	</exec>
+  	
+  	<exec executable="cp">
+  	    <arg line="-R ${bin}_linux ${dist}/pepr/bin"/>
+  	</exec>
+<!--  	
     <copy todir="${dist}/pepr/bin">
       <fileset dir="${bin}_linux"/>
     </copy>
-    
+-->
+  	
     <copy todir="${dist}/pepr/lib">
       <fileset dir="${lib}"/>
     </copy>
