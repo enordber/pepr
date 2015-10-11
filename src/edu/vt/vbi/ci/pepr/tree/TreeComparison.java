@@ -683,7 +683,9 @@ public class TreeComparison {
 				}
 			} else {
 				System.out.println("Branch removed. Initial support: " + tree1Support);
-				removedBranchSupports.add(tree1Support);
+				if(tree1Support == tree1Support) { //don't add NaN values
+					removedBranchSupports.add(tree1Support);
+				}
 			}
 			double branchLength = tree1BranchLengths[i];
 			sumOfSquaresTree1 += branchLength*branchLength;
@@ -696,7 +698,10 @@ public class TreeComparison {
 		double sum = 0;
 		for(int i = 0; i < removedSupports.length; i++) {
 			removedSupports[i] = removedBranchSupports.get(i);
-			sum += removedSupports[i];
+//			if(removedSupports[i] == removedSupports[1])
+//			{
+				sum += removedSupports[i];
+//			}
 		}
 		double meanRemovedSupport = sum / removedSupports.length;
 		Arrays.sort(removedSupports);

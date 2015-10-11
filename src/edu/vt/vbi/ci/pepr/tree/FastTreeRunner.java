@@ -46,7 +46,7 @@ public class FastTreeRunner implements Runnable{
 			fw.write("\n");
 			fw.flush();
 			fw.close();
-			alignmentFile.deleteOnExit();
+//			alignmentFile.deleteOnExit();
 
 			//if constraints have been provided, create constraints file
 			String treeConstraints = getConstraints();
@@ -92,7 +92,7 @@ public class FastTreeRunner implements Runnable{
 				}
 				setResult(treeString);
 			} else {
-				logger.error("No FastTree result reported to stdout. Here is stderr:");
+				logger.error("No FastTree result reported to stdout for alignment file '" + alignmentFileName + "'. Here is stderr:");
 				String[] stderr = results.getStderr();
 				for(int i = 0; i < stderr.length; i++) {
 					logger.error(stderr[i]);

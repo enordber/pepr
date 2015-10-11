@@ -1424,9 +1424,6 @@ public class PhylogenomicPipeline2 {
 	}
 
 	private void compareTreeBuildingTools(SequenceSetProvider provider, String matrix, int threads) {
-		if(verboseLevel > 0) {
-			logger.info("PahylogenomicPipeline2.compareTreeBuildingTools()");
-		}
 		FastaSequenceSet[] sequenceSets = provider.getAllSequenceSets();
 
 		TreeBuilderComparator tbc = new TreeBuilderComparator();
@@ -1440,9 +1437,6 @@ public class PhylogenomicPipeline2 {
 	}
 
 	private void buildTreesFromSamples(SequenceSetProvider provider) {
-		if(verboseLevel > 0) {
-			logger.info("PhylogenomicPipeline2.buildTreesFromSamples()");
-		}
 		FastaSequenceSet[] sequenceSets = provider.getAllSequenceSets();
 
 		logger.info("seqs\tlength\tree");
@@ -1568,7 +1562,12 @@ public class PhylogenomicPipeline2 {
 				logger.info("building tree: " + building);
 				ConcatenatedSequenceAlignment alignment = null;
 				try {
-					alignment = getConcatenatedAlignmentOfSubset(provider, size);
+					while(alignment == null || alignment.getLength() ==0) {
+						alignment = getConcatenatedAlignmentOfSubset(provider, size);
+						if(alignment == null || alignment.getLength() == 0) {
+							System.out.println("&*^%#&^%#&*^%#&^%#&^%#&^$%#&%^$#^%$#bad concatenated alignment returned");
+						}
+					}
 				} catch(Exception e) {
 					logger.error("Exception trying to get subset " +
 							"alignment. Will try again. Here's the " +
