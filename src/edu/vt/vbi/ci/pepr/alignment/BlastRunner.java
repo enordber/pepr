@@ -31,7 +31,7 @@ public class BlastRunner {
 	private boolean keepFiles = false;
 	private String runName;
 	private boolean blastn = false;
-	
+
 	//first dimension is index of the RemoteHost. second dimension is
 	//index of the sequenceSet. if true, it means this sequence set has
 	//been formatted using formatdb on the host
@@ -44,18 +44,18 @@ public class BlastRunner {
 	private static int defaultHitsPerQuery = 1;
 
 	public static void main(String[] args) {
-		
+
 		BlastRunner br = new BlastRunner(args);
 		br.run();
 
 	}
-	
+
 	public BlastRunner(String[] args) {
 		CommandLineProperties commandLineProperties = 
-			new CommandLineProperties(args);
+				new CommandLineProperties(args);
 
 		String[] infileNames = 
-			commandLineProperties.getValues(HandyConstants.FILE); 
+				commandLineProperties.getValues(HandyConstants.FILE); 
 		if(infileNames == null || infileNames.length == 0) {
 			System.out.println("please provide input file names with option '-"
 					+ HandyConstants.FILE + "'");
@@ -63,7 +63,7 @@ public class BlastRunner {
 			System.exit(0);
 		}
 		FastaSequenceFile[] sequenceFiles =
-			new FastaSequenceFile[infileNames.length];
+				new FastaSequenceFile[infileNames.length];
 		for(int i = 0; i < sequenceFiles.length; i++) {
 			try {
 				System.out.println("loading sequence file: " + infileNames[i]);
@@ -77,12 +77,12 @@ public class BlastRunner {
 
 		//check for separate list of query files
 		String[] queryFileNames =
-			commandLineProperties.getValues(HandyConstants.QUERY);
+				commandLineProperties.getValues(HandyConstants.QUERY);
 		if(queryFileNames == null) {
 			queryFileNames = infileNames;
 		}
 		FastaSequenceFile[] queryFiles = 
-			new FastaSequenceFile[queryFileNames.length];
+				new FastaSequenceFile[queryFileNames.length];
 		for(int i = 0; i < queryFiles.length; i++) {
 			try {
 				queryFiles[i] = new FastaSequenceFile(queryFileNames[i]);
@@ -93,31 +93,31 @@ public class BlastRunner {
 
 		//get name of preformatted blast database, if provided
 		String blastd = commandLineProperties.getValues(HandyConstants.BLASTD, null)[0];
-		
+
 		//get blast word size (-W)
 		String wordSizeParam = 
-			commandLineProperties.getValues(HandyConstants.WORD_SIZE, "0")[0];
+				commandLineProperties.getValues(HandyConstants.WORD_SIZE, "0")[0];
 		int wordSize = Integer.parseInt(wordSizeParam);
-		
+
 		//get Extension Threshold (-f)
 		String etParam = 
-			commandLineProperties.getValues(HandyConstants.EXT_THRESH, "11")[0];
+				commandLineProperties.getValues(HandyConstants.EXT_THRESH, "11")[0];
 		int extThresh = Integer.parseInt(etParam);
-		
+
 		String threadParam = 
-			commandLineProperties.getValues("blast_threads", 
-					""+defaultThreads)[0];
+				commandLineProperties.getValues("blast_threads", 
+						""+defaultThreads)[0];
 		int blastThreads = Integer.parseInt(threadParam);
 
 		String hitsPerQueryParam = 
-			commandLineProperties.getValues("hits_per_query", 
-					""+ defaultHitsPerQuery)[0];
+				commandLineProperties.getValues("hits_per_query", 
+						""+ defaultHitsPerQuery)[0];
 		int blastHitsPerQuery = Integer.parseInt(hitsPerQueryParam);
 
 		String evalueParam = commandLineProperties.getValues("evalue", ""+defaultEvalueCutoff)[0];
 		double evalue = Double.parseDouble(evalueParam);
 		String resultFileName = 
-			commandLineProperties.getValues(HandyConstants.OUT, null)[0];
+				commandLineProperties.getValues(HandyConstants.OUT, null)[0];
 
 		boolean blastn = !commandLineProperties.getValues(HandyConstants.BLASTN, HandyConstants.FALSE)[0].equals(HandyConstants.FALSE);
 
@@ -144,7 +144,7 @@ public class BlastRunner {
 	private void setBlastd(String blastd) {
 		this.blastd = blastd;
 	}
-	
+
 	private void setBlastn(boolean bn) {
 		blastn = bn;
 	}
@@ -192,8 +192,7 @@ public class BlastRunner {
 	private void createConcatenatedSet() {
 		try {
 			File tempFile = File.createTempFile("cat", ".faa");
-			String concatenatedFileName = tempFile.getName();
-			FileWriter fw = new FileWriter(concatenatedFileName);
+			FileWriter fw = new FileWriter(tempFile);
 			tempFile.deleteOnExit();
 			//write each line from each sequenceSet to the concatenated file
 			for(int i = 0; i < querySequenceFiles.length; i++) {
@@ -211,7 +210,7 @@ public class BlastRunner {
 			fw.flush();
 			fw.close();
 
-			concatenatedSequenceSet = new FastaSequenceFile(concatenatedFileName);
+			concatenatedSequenceSet = new FastaSequenceFile(tempFile.getName());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -241,15 +240,15 @@ public class BlastRunner {
 			querySets = new FastaSequenceFile[numberOfQueryFiles];
 			//determine start and stop sequences for each query file
 			int sequencesPerFile = 
-				(int) Math.ceil((double)concatenatedSequenceSet.
-						getSequenceCount()/ numberOfQueryFiles);
+					(int) Math.ceil((double)concatenatedSequenceSet.
+							getSequenceCount()/ numberOfQueryFiles);
 			int[][] startStops = new int[numberOfQueryFiles][2];
 			for(int i = 0; i < startStops.length; i++) {
 				startStops[i][0] = sequencesPerFile * i;
 				startStops[i][1] = sequencesPerFile * (i+1);
 			}
 			startStops[startStops.length-1][1] =
-				concatenatedSequenceSet.getSequenceCount();
+					concatenatedSequenceSet.getSequenceCount();
 
 			try {
 				File directory = new File(System.getProperty("user.dir"));
@@ -303,8 +302,8 @@ public class BlastRunner {
 			querySets = new FastaSequenceFile[numberOfQueryFiles];
 			//determine start and stop sequences for each query file
 			int linesPerFile = 
-				(int) Math.ceil((double)concatenatedSequenceSet.
-						getLineCount()/ numberOfQueryFiles);
+					(int) Math.ceil((double)concatenatedSequenceSet.
+							getLineCount()/ numberOfQueryFiles);
 
 			int sequenceCount = concatenatedSequenceSet.getSequenceCount();
 			int nextSeqIndex = 0;
@@ -321,7 +320,7 @@ public class BlastRunner {
 					int linesInFile = 0;
 					while(linesInFile < linesPerFile && nextSeqIndex < sequenceCount) {
 						String[] seq = 
-							concatenatedSequenceSet.getSequence(nextSeqIndex);
+								concatenatedSequenceSet.getSequence(nextSeqIndex);
 						boolean addNextSequence = false;
 						if(linesInFile + seq.length < linesPerFile) {
 							addNextSequence = true;
@@ -348,7 +347,7 @@ public class BlastRunner {
 						//this is the last file - add any remaining sequences
 						while(nextSeqIndex < sequenceCount) {
 							String[] seq = 
-								concatenatedSequenceSet.getSequence(nextSeqIndex);
+									concatenatedSequenceSet.getSequence(nextSeqIndex);
 							nextSeqIndex++;
 							linesInFile += seq.length;
 							for(int k = 0; k < seq.length; k++) {
@@ -395,8 +394,8 @@ public class BlastRunner {
 				br = new BlastnRunnable(queryForThread.getFileName(), querySetIndex, 
 						blastd, 0, 4);				
 			} else {
-			br = new BlastRunnable(queryForThread.getFileName(), querySetIndex, 
-					blastd, wordSize, extensionThreshold);
+				br = new BlastRunnable(queryForThread.getFileName(), querySetIndex, 
+						blastd, wordSize, extensionThreshold);
 			}
 			threads[i] = new Thread(br);
 			threads[i].start();
@@ -427,7 +426,7 @@ public class BlastRunner {
 		File r = null;
 		if(resultFileName == null) {
 			if(runName == null) {
-			    r = File.createTempFile("all_blast_", ".out", new File(System.getProperty("user.dir")));
+				r = File.createTempFile("all_blast_", ".out", new File(System.getProperty("user.dir")));
 			} else {
 				r = new File(runName + "_all_blast.out");
 			}
@@ -447,19 +446,21 @@ public class BlastRunner {
 
 				for (int i = 0; i < setResults.length; i++) {
 					for (int j = 0; j < setResults[i].length; j++) {
-						setResults[i][j].openFile();
-						int lineCount = setResults[i][j].getLineCount();
-						for (int k = 0; k < lineCount; k++) {
-							String line = setResults[i][j].getLine(k);
-							if (line.length() > 1) {
-								fw.write(line);
-								fw.write("\n");
+						if(setResults[i][j] != null) {
+							setResults[i][j].openFile();
+							int lineCount = setResults[i][j].getLineCount();
+							for (int k = 0; k < lineCount; k++) {
+								String line = setResults[i][j].getLine(k);
+								if (line.length() > 1) {
+									fw.write(line);
+									fw.write("\n");
+								}
 							}
-						}
-						setResults[i][j].closeFile();
-						
-						if(!keepFiles) {
-							setResults[i][j].getFile().delete();
+							setResults[i][j].closeFile();
+
+							if(!keepFiles) {
+								setResults[i][j].getFile().delete();
+							}
 						}
 					}
 				}
@@ -545,7 +546,7 @@ public class BlastRunner {
 						if(!targetFormatted[index]) {
 							//format sequence set with formatdb, if not already done 
 							String formatdbCommand = formatdbPath + " -i "
-							+ sequenceSets[index].getFullName();
+									+ sequenceSets[index].getFullName();
 							System.out.println("formatdb command: " + formatdbCommand);
 							CommandResults formatdbResult = ExecUtilities.exec(formatdbCommand);
 							String[] res = formatdbResult.getStderr();
@@ -563,13 +564,13 @@ public class BlastRunner {
 						dbName = blastd;
 					}
 					String blastCommand = blastallPath + " -p blastp " +
-					" -d " + dbName + 
-					" -i " + concatenatedSequenceName +
-					" -e " + evalueCutoff + 
-					" -W " + wordSize + 
-					" -f " + extensionThreshold +
-					" -v " + hitsPerQuery + " -b " +
-					hitsPerQuery + outputFormat + " -o " + outputName;
+							" -d " + dbName + 
+							" -i " + concatenatedSequenceName +
+							" -e " + evalueCutoff + 
+							" -W " + wordSize + 
+							" -f " + extensionThreshold +
+							" -v " + hitsPerQuery + " -b " +
+							hitsPerQuery + outputFormat + " -o " + outputName;
 
 					System.out.println("blastCommand: " + blastCommand);
 					ExecUtilities.exec(blastCommand);
@@ -590,7 +591,7 @@ public class BlastRunner {
 		}
 
 	}
-	
+
 	private class BlastnRunnable implements Runnable {
 
 		private String formatdbPath;
@@ -636,7 +637,7 @@ public class BlastRunner {
 						if(!targetFormatted[index]) {
 							//format sequence set with formatdb, if not already done 
 							String formatdbCommand = formatdbPath + " -p F -i "
-							+ sequenceSets[index].getFullName();
+									+ sequenceSets[index].getFullName();
 							System.out.println("formatdb command: " + formatdbCommand);
 							CommandResults formatdbResult = ExecUtilities.exec(formatdbCommand);
 							String[] res = formatdbResult.getStderr();
@@ -654,27 +655,27 @@ public class BlastRunner {
 						dbName = blastd;
 					}
 					String blastCommand = blastallPath + " -p blastn " +
-					" -d " + dbName + 
-					" -i " + concatenatedSequenceName +
-					" -e " + evalueCutoff + 
-					" -W " + wordSize + 
-					" -f " + extensionThreshold +
-					" -v " + hitsPerQuery + " -b " +
-					hitsPerQuery + outputFormat + " -o " + outputName;
+							" -d " + dbName + 
+							" -i " + concatenatedSequenceName +
+							" -e " + evalueCutoff + 
+							" -W " + wordSize + 
+							" -f " + extensionThreshold +
+							" -v " + hitsPerQuery + " -b " +
+							hitsPerQuery + outputFormat + " -o " + outputName;
 
 					System.out.println("blastCommand: " + blastCommand);
 					CommandResults blastCR =   ExecUtilities.exec(blastCommand);
 					String[] stdout = blastCR.getStdout();
 					String[] stderr = blastCR.getStderr();
-					
+
 					for(int i = 0; i < stdout.length;i++) {
 						System.out.println(stdout[i]);
 					}
-					
+
 					for(int i = 0; i < stderr.length;i++) {
 						System.out.println(stderr[i]);
 					}
-					
+
 					TextFile resultFile = null;
 					try {
 						resultFile = new TextFile(outputName); 							
@@ -691,7 +692,7 @@ public class BlastRunner {
 		}
 
 	}
-	
+
 	public void setRunName(String name) {
 		runName = name;
 	}
