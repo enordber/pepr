@@ -1,5 +1,6 @@
 package edu.vt.vbi.ci.pepr.alignment;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -192,7 +193,7 @@ public class BlastRunner {
 	private void createConcatenatedSet() {
 		try {
 			File tempFile = File.createTempFile("cat", ".faa");
-			FileWriter fw = new FileWriter(tempFile);
+			BufferedWriter bw = new BufferedWriter( new FileWriter(tempFile));
 			tempFile.deleteOnExit();
 			//write each line from each sequenceSet to the concatenated file
 			for(int i = 0; i < querySequenceFiles.length; i++) {
@@ -201,14 +202,14 @@ public class BlastRunner {
 				for(int j = 0; j < fileLineCount; j++) {
 					String line = querySequenceFiles[i].getLine(j);
 					if(line .length() > 1) {
-						fw.write(line);
-						fw.write("\n");
+						bw.write(line);
+						bw.write("\n");
 					}
 				}
 				querySequenceFiles[i].closeFile();
 			}
-			fw.flush();
-			fw.close();
+			bw.flush();
+			bw.close();
 
 			concatenatedSequenceSet = new FastaSequenceFile(tempFile.getName());
 		} catch (IOException e) {
