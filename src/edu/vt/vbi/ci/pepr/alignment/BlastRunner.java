@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import edu.vt.vbi.ci.util.CommandLineProperties;
 import edu.vt.vbi.ci.util.CommandResults;
@@ -33,10 +34,7 @@ public class BlastRunner {
 	private String runName;
 	private boolean blastn = false;
 
-	//first dimension is index of the RemoteHost. second dimension is
-	//index of the sequenceSet. if true, it means this sequence set has
-	//been formatted using formatdb on the host
-	boolean targetFormatted[];
+	HashSet<String> formattedTargets;
 	private int nextTargetIndex = 0;
 	private int[] nextTargetIndices;
 
@@ -192,7 +190,7 @@ public class BlastRunner {
 
 	private void createConcatenatedSet() {
 		try {
-			File tempFile = File.createTempFile("cat", ".faa");
+			File tempFile = File.createTempFile("cat", ".faa", new File(System.getProperty("user.dir")));
 			BufferedWriter bw = new BufferedWriter( new FileWriter(tempFile));
 			tempFile.deleteOnExit();
 			//write each line from each sequenceSet to the concatenated file
@@ -201,7 +199,7 @@ public class BlastRunner {
 				querySequenceFiles[i].openFile();
 				for(int j = 0; j < fileLineCount; j++) {
 					String line = querySequenceFiles[i].getLine(j);
-					if(line .length() > 1) {
+					if(line.length() > 1) {
 						bw.write(line);
 						bw.write("\n");
 					}
@@ -381,8 +379,7 @@ public class BlastRunner {
 
 		String workingDirectory = System.getProperty("user.dir");
 
-		//create the tracking array for formatdb
-		targetFormatted = new boolean[sequenceSets.length];
+		formattedTargets = new HashSet<String>();;
 
 		//create and start the appropriate number of worker Threads
 		Thread[] threads = new Thread[threadCount];
@@ -544,7 +541,7 @@ public class BlastRunner {
 				int index = getNextTargetIndex(querySetIndex);
 				while (index < sequenceSets.length) {
 					synchronized(this) {
-						if(!targetFormatted[index]) {
+						if(!formattedTargets.contains(sequenceSets[index].getName())) {
 							//format sequence set with formatdb, if not already done 
 							String formatdbCommand = formatdbPath + " -i "
 									+ sequenceSets[index].getFullName();
@@ -554,7 +551,7 @@ public class BlastRunner {
 							for(int i = 0; i < res.length; i++) {
 								System.out.println(res[i]);
 							}
-							targetFormatted[index] = true;
+							formattedTargets.add(sequenceSets[index].getName());
 						}
 					}
 					File forOutfileName = File.createTempFile("blast", ".out");
@@ -635,7 +632,7 @@ public class BlastRunner {
 				int index = getNextTargetIndex(querySetIndex);
 				while (index < sequenceSets.length) {
 					synchronized(BlastRunner.this) {
-						if(!targetFormatted[index]) {
+						if(!formattedTargets.contains(sequenceSets[index].getName())) {
 							//format sequence set with formatdb, if not already done 
 							String formatdbCommand = formatdbPath + " -p F -i "
 									+ sequenceSets[index].getFullName();
@@ -645,7 +642,7 @@ public class BlastRunner {
 							for(int i = 0; i < res.length; i++) {
 								System.out.println(res[i]);
 							}
-							targetFormatted[index] = true;
+							formattedTargets.add(sequenceSets[index].getName());
 						}
 					}
 					File forOutfileName = File.createTempFile("blast", ".out");
