@@ -540,7 +540,10 @@ public class BlastRunner {
 			try {
 				int index = getNextTargetIndex(querySetIndex);
 				while (index < sequenceSets.length) {
-					synchronized(this) {
+					synchronized(sequenceSets[index].getName()) {
+						//synchronize on the sequenceSet name so only one thread will 
+						//run formatdb on this sequence set. By the time the second thread 
+						//gets a lock on the name, it will have been formatted by the first thread
 						if(!formattedTargets.contains(sequenceSets[index].getName())) {
 							//format sequence set with formatdb, if not already done 
 							String formatdbCommand = formatdbPath + " -i "
@@ -554,6 +557,7 @@ public class BlastRunner {
 							formattedTargets.add(sequenceSets[index].getName());
 						}
 					}
+
 					File forOutfileName = File.createTempFile("blast", ".out");
 					String outputName = forOutfileName.getName();
 
@@ -631,9 +635,12 @@ public class BlastRunner {
 			try {
 				int index = getNextTargetIndex(querySetIndex);
 				while (index < sequenceSets.length) {
-					synchronized(BlastRunner.this) {
-						if(!formattedTargets.contains(sequenceSets[index].getName())) {
-							//format sequence set with formatdb, if not already done 
+					
+					synchronized(sequenceSets[index].getName()) {
+						//synchronize on the sequenceSet name so only one thread will 
+						//run formatdb on this sequence set. By the time the second thread 
+						//gets a lock on the name, it will have been formatted by the first thread
+						if(!formattedTargets.contains(sequenceSets[index].getName())) {							//format sequence set with formatdb, if not already done 
 							String formatdbCommand = formatdbPath + " -p F -i "
 									+ sequenceSets[index].getFullName();
 							System.out.println("formatdb command: " + formatdbCommand);
@@ -645,6 +652,7 @@ public class BlastRunner {
 							formattedTargets.add(sequenceSets[index].getName());
 						}
 					}
+					
 					File forOutfileName = File.createTempFile("blast", ".out");
 					String outputName = forOutfileName.getName();
 

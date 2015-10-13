@@ -237,7 +237,7 @@ public class SequenceAlignment {
 		} else {
 			System.out.println("SequenceAlignment.getSequenceString() requested " +
 					"sequence at index " + index + ", but this alignment " +
-					"anly has " + alignedSequenceChars.length + 
+					"only has " + alignedSequenceChars.length + 
 			" aligned sequences.");
 		}
 		return r;

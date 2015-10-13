@@ -96,7 +96,7 @@ public class PhyloPipeline {
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
 		PEPRTracker.newTree(runName);
 
-		String logfile = clp.getValues("logfile", "pepr.log")[0];
+		String logfile = clp.getValues("logfile", runName+".log")[0];
 		//set log file name, based on run name, if it has not already been set
 		System.setProperty("logfile.name",System.getProperty("logfile.name", logfile));
 		logger = Logger.getLogger("PEPR");
@@ -1019,7 +1019,7 @@ public class PhyloPipeline {
 		commands.put(HandyConstants.UNIQUE_SPECIES, 
 				"For initial homology search step, only use one member from each species. Homology group seed clusters are built from these results and then expanded with hmmsearch.");
 		commands.put(HandyConstants.CONGRUENCE_FILTER, 
-				"Filter homolog sets based on potential phylopgenetic congruence before concatenating alignments to infer main tree. Congruence filter is based on conflicting bipartitions in the data set.");
+				"Filter homolog sets based on potential phylopgenetic congruence before concatenating alignments to infer main tree. Congruence filter is based on conflicting ns in the data set.");
 		commands.put(HandyConstants.RUN_NAME, 
 				"Provide an optional run name for. Output files will contain this name, making it easier to track the results. If no run name is provided, one will be automatically generated.");
 		commands.put(HandyConstants.MIN_TAXA_MULTIPLIER, 

@@ -46,7 +46,7 @@ public class FastTreeRunner implements Runnable{
 			fw.write("\n");
 			fw.flush();
 			fw.close();
-//			alignmentFile.deleteOnExit();
+			alignmentFile.deleteOnExit();
 
 			//if constraints have been provided, create constraints file
 			String treeConstraints = getConstraints();

@@ -488,6 +488,7 @@ public class HMMSetEnhancer {
 		private String hmmFileName;
 		private TextFile[] resultHolder;
 		private HMMResult[][] hmmResultHolder; 
+		boolean keepHMMSearchFiles = false;
 
 		public HMMSearchRunner(String hmmfileName, TextFile[] resultHolder,
 				HMMResult[][] hmmResultHolder) {
@@ -515,6 +516,9 @@ public class HMMSetEnhancer {
 
 					ExecUtilities.exec(hmmsearchCmd);
 					TextFile resultFile =  new TextFile(outfileName);
+					if(!keepHMMSearchFiles) {
+						resultFile.getFile().deleteOnExit();
+					}
 					resultHolder[genomeIndex] = resultFile;
 					HMMResult[] hmmResults = getHMMResults(resultFile);
 					hmmResultHolder[genomeIndex] = hmmResults;
