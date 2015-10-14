@@ -12,8 +12,9 @@ directory containing this README document:
 cd examples/
 mkdir run_erysipelotrichales
 cd run_erysipelotrichales/
-sh ../../dist/pepr/scripts/pepr.sh -run_name erysipelotrichales -genome_file ../Erysipelotrichales/*faa -outgroup
-../Erysipelotrichales/outgroup/*faa -outgroup_count 2 > erysipelotrichales.out
+sh ../../dist/pepr/scripts/pepr.sh -run_name erysipelotrichales -genome_file \
+../Erysipelotrichales/*faa -outgroup ../Erysipelotrichales/outgroup/*faa \
+-outgroup_count 2 > erysipelotrichales.out
 
 The Erysipelotrichales example should produce a tree with 100% support for all branches on the first round.
 
@@ -23,8 +24,9 @@ To run the Aquificales example, run the following commands:
 cd examples/
 mkdir run_aquificales
 cd run_aquificales/
-sh ../../dist/pepr/scripts/pepr.sh -run_name aquificales -genome_file ../Aquificales/*faa -outgroup
-../Aquificales/outgroup/*faa -outgroup_count 2 > aquificales.out
+sh ../../dist/pepr/scripts/pepr.sh -run_name aquificales -genome_file \
+../Aquificales/*faa -outgroup ../Aquificales/outgroup/*faa \
+-outgroup_count 2 > aquificales.out
 
 The Aquificales example should build a full tree then do one refinement round. The resulting 
 tree should have all 100% branch supports, except one branch with ~40%.
