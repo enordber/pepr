@@ -1,5 +1,35 @@
 PEPR - Phylogenomic Estimation with Progressive Refinement
 
+Examples
+
+Two example data sets are provided in the examples/ directory. These are to verify 
+that your installation is working, and to provide example commands you can modify 
+to begin building your own trees. 
+
+To run the Erysipelotrichales example, run the following commands from the 'pepr'
+directory containing this README document:
+
+cd examples/
+mkdir run_erysipelotrichales
+cd run_erysipelotrichales/
+sh ../../dist/pepr/scripts/pepr.sh -run_name erysipelotrichales -genome_file ../Erysipelotrichales/*faa -outgroup
+../Erysipelotrichales/outgroup/*faa -outgroup_count 2 > erysipelotrichales.out
+
+The Erysipelotrichales example should produce a tree with 100% support for all branches on the first round.
+
+
+To run the Aquificales example, run the following commands:
+
+cd examples/
+mkdir run_aquificales
+cd run_aquificales/
+sh ../../dist/pepr/scripts/pepr.sh -run_name aquificales -genome_file ../Aquificales/*faa -outgroup
+../Aquificales/outgroup/*faa -outgroup_count 2 > aquificales.out
+
+The Aquificales example should build a full tree then do one refinement round. The resulting 
+tree should have all 100% branch supports, except one branch with ~40%.
+
+
 PEPR uses several third-party tools, which are included with this distribution for the 
 convenience of the end user. PEPR has been tested with these specific versions of these
 tools. Other versions may be substituted, but there is no guarantee that PEPR will work
