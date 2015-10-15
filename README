@@ -16,7 +16,8 @@ sh ../../dist/pepr/scripts/pepr.sh -run_name erysipelotrichales -genome_file \
 ../Erysipelotrichales/*faa -outgroup ../Erysipelotrichales/outgroup/*faa \
 -outgroup_count 2 > erysipelotrichales.out
 
-The Erysipelotrichales example should produce a tree with 100% support for all branches on the first round.
+The Erysipelotrichales example should produce a tree with 100% support for all 
+branches on the first round.
 
 
 To run the Aquificales example, run the following commands:
@@ -28,8 +29,8 @@ sh ../../dist/pepr/scripts/pepr.sh -run_name aquificales -genome_file \
 ../Aquificales/*faa -outgroup ../Aquificales/outgroup/*faa \
 -outgroup_count 2 > aquificales.out
 
-The Aquificales example should build a full tree then do one refinement round. The resulting 
-tree should have all 100% branch supports, except one branch with ~40%.
+The Aquificales example should build a full tree then do one refinement round. The 
+resulting tree should have all 100% branch supports, except one branch with ~40%.
 
 
 PEPR uses several third-party tools, which are included with this distribution for the 
@@ -38,10 +39,13 @@ tools. Other versions may be substituted, but there is no guarantee that PEPR wi
 properly with different versions. It is our best understanding that all of these
 programs are available under terms that allow them to be distributed in this manner.
 This document lists the third-party programs included, and the reasons we believe it is
-acceptable for them to be redistributed in this fashion. With the exception of
-FastTree, all third-party tools are unaltered. FastTree was modified, with assistance
-from its author, Morgan Price, in order to use the WAG likelihood matrix, rather than
-the default JTT matrix.
+acceptable for them to be redistributed in this fashion. PEPR itself, as distinct from 
+the tools listed below, is released under the terms of the GNU Lesser General Public
+License v3, a copy of which is included in the directory containing this README document.
+
+With the exception of FastTree, all third-party tools are unaltered. FastTree was 
+modified, with assistance from its author, Morgan Price, in order to use the WAG 
+likelihood matrix, rather than the default JTT matrix.
 
 Note that blat is only available for "personal, academic, and non-profit use". If your 
 use does not fit this description, you must use the blast option, rather than the blat 
