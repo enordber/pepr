@@ -94,13 +94,4 @@ muscle
 raxmlHPC, raxmlHPC-PTHREADS
         https://github.com/stamatak/standard-RAxML/blob/master/manual/NewManual.pdf
         “RAxML is open source under GNU GPL”
-
-
-
-Running PEPR on the included example data set (Alphaproteobacteria):
-        Retrieve the tarfile at dist/pepr.tar. Unpack the tar with
-        tar -xf pepr.tar
-        This will create a directory, 'pepr'.
-        Create a directory to run the example, and cd to the directory. (This is optional and recommended due to the files generated.)
-        Start the pipeline by running the script at pepr/scripts/build_alpha_tree.sh
         
