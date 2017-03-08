@@ -234,7 +234,10 @@ public class HMMSetEnhancer {
 
 			//collect entries for each set until a duplicate from a 
 			//genome is found
-			String previousSetName = hmmResults[0].getSet();
+			String previousSetName = "";
+			if(hmmResults.length > 0){
+				hmmResults[0].getSet();
+			}
 			ArrayList workingSet = new ArrayList();
 			boolean[] genomeSeen = new boolean[genomeSequenceFiles.length];
 			float[] genomeScore = new float[genomeSequenceFiles.length];
@@ -261,7 +264,8 @@ public class HMMSetEnhancer {
 						//entry files cause the homolog sets to be prematurely
 						//truncated and this is to correct for that problem.	
 						logger.info("ignoring duplicate member from genome " 
-								+ genomeSequenceFiles[genomeIndex].getFileName() + ": " + hmmResults[i].getId());
+								+ genomeSequenceFiles[genomeIndex].getFileName() + ". hmmResults[" + i + "]:.getId(): " +
+								hmmResults[i].getId() + " with score: " + hmmResults[i].getScore() + " for set " + hmmResults[i].getSet());
 					} else {
 						//duplicate genome seen - stop collecting for this set
 						collectingForSet = false;

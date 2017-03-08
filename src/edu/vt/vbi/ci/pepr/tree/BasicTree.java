@@ -473,7 +473,7 @@ public class BasicTree {
 		if(r == -1) {
 			System.out.println("no top level nodes were found in this tree");
 		} 
-
+//		System.out.println("BasicTree.getTopLevelNode() topLevelNodes: " + topLevelNodes + " r: " + r);
 		return r;
 	}
 
@@ -751,7 +751,9 @@ public class BasicTree {
 
 			//ensure that the tree is unrooted. If it is not already unrooted,
 			//then unroot it.
-			unroot();
+			if(isRooted()) {
+				unroot();
+			}
 
 			//If a root node does not already exist, create a new node, 
 			//which will be the root. Its parent will be 
@@ -785,7 +787,6 @@ public class BasicTree {
 				//increase branchSupports array
 				String[] newBranchSupports = new String[branchSupports.length+1];
 				System.arraycopy(branchSupports, 0, newBranchSupports, 0, branchSupports.length);
-				newBranchSupports[branchSupports.length] = "";
 				branchSupports = newBranchSupports;
 			}
 
@@ -797,13 +798,8 @@ public class BasicTree {
 			double childLength = branchLength * (1-rootPoint);
 			String branchSupport = branchSupports[childNode];
 
-			int grandparentNode = nodeParentPointers[parentNode];
-			if(grandparentNode >=0 ) {
-				convertParentsToChildren(grandparentNode, parentNode);
-			}
-
-			//remove childNode as a child of parentNode
-			removeChildNode(parentNode, childNode);
+			convertParentsToChildren(parentNode, childNode);
+			removeChildNode(childNode, parentNode);
 
 			nodeParentPointers[parentNode] = rootIndex;
 			nodeParentPointers[childNode] = rootIndex;
@@ -875,8 +871,9 @@ public class BasicTree {
 		nodeParentPointers[parentNode] = childNode;
 
 		//the branch that used to lead to childNode now leads to parentNode
-		//so update branchLengths
+		//so update branchLengths and branchSUpports
 		branchLengths[parentNode] = branchLengths[childNode];
+		branchSupports[parentNode] = branchSupports[childNode];
 
 	}
 
@@ -920,7 +917,7 @@ public class BasicTree {
 						rooted = true;
 					} else {
 						int grandparent = nodeParentPointers[parent];
-						
+
 						double branchLength = branchLengths[parent];
 						branchLengths[remainingChild] += branchLength;
 						//find which child of grandparent parent is
@@ -1128,17 +1125,17 @@ public class BasicTree {
 		}
 		return r;
 	}
-	
+
 	public String getTreeJSON() {
 		String r = null;
 		int topNode = getTopLevelNode();
 		r = getNodeJSON(topNode, 0);
 		return r;
 	}
-	
+
 	public String getNodeJSON(int node, double distanceFromRoot) {
 		String r = null;
-		
+
 		StringBuffer sb = new StringBuffer();
 		sb.append("{");
 		sb.append("\"name\":");
@@ -1148,7 +1145,7 @@ public class BasicTree {
 			sb.append(leaves[node]); 
 			sb.append("\"");
 		} else {
-		    //this is an internal node
+			//this is an internal node
 			sb.append("\"");
 			sb.append(node); //use node number for name of internal nodes
 			sb.append("\"");
@@ -1167,7 +1164,7 @@ public class BasicTree {
 		r = sb.toString();
 		return r;
 	}
-	
+
 	public boolean containsTaxon(String taxon) {
 		boolean r = false;
 		String[] leaves = getLeaves();

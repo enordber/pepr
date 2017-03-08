@@ -1,6 +1,7 @@
 package edu.vt.vbi.ci.pepr.tree;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,7 +15,39 @@ public class TreeSupportDecorator {
 	private static final String MAIN = "main";
 	private static final String SUPPORT = "support";
 	private static final String NONE = "none";
-	
+
+
+
+	public static void main(String[] args) {
+		CommandLineProperties clp = new CommandLineProperties(args);
+		String mainTreeFileName = clp.getValues(MAIN, NONE)[0];
+		String[] supportTreeFileNames = clp.getValues(SUPPORT, NONE);
+
+		//load tree strings from files
+		try {
+			System.out.println("main tree file: " + mainTreeFileName);
+			String mainTree = new TextFile(mainTreeFileName).toString().trim();
+
+			ArrayList<String> supportTrees = new ArrayList<String>();
+			for(int i = 0; i < supportTreeFileNames.length; i++) {
+				TextFile supportTreeFile = new TextFile(supportTreeFileNames[i]);
+				String[] treeLines = supportTreeFile.getAllLines();
+				for(String treeLine: treeLines) {
+					if(treeLine.trim().length() > 0) {
+						supportTrees.add(treeLine.trim());
+					}
+				}
+			}
+
+			String[] supports = new String[supportTrees.size()];
+			supportTrees.toArray(supports);
+			String decoratedTree = addSupportValues(mainTree, supports);
+			System.out.println(decoratedTree);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/**
 	 * Adds support values to the mainTree based on the presence of
 	 * bipartitions in the supportTrees. All tree should have the 
@@ -57,6 +90,7 @@ public class TreeSupportDecorator {
 		AdvancedTree mainTree = new AdvancedTree(main);
 		mainTree.unroot();
 
+		System.out.println("support trees: " + supports.length);
 		AdvancedTree[] supportTrees = new AdvancedTree[supports.length];
 		for(int i = 0; i < supportTrees.length; i++) {
 			supportTrees[i] = new AdvancedTree(supports[i]);
@@ -112,6 +146,11 @@ public class TreeSupportDecorator {
 		int[] bipartSupportCounts = new int[mainTreeBiparts.length];
 		for(int i = 0; i < bipartSupportCounts.length; i++) {
 			bipartSupportCounts[i] = supportTreeBipartSet.getCount(mainTreeBiparts[i]);
+			if(bipartSupportCounts[i] < 100) {
+				System.out.println("main tree bipartition:");
+				System.out.println(mainTreeBiparts[i].getString());
+				System.out.println("support: " + bipartSupportCounts[i]);
+			}
 		}
 
 		//add support values to the main tree

@@ -49,6 +49,7 @@ public class PhyloPipeline {
 	private static HashMap<String,String> commands;
 	private static long startTime;	
 	static{
+		logger = Logger.getLogger("PEPR");
 		defineHelp();
 	}
 
@@ -99,7 +100,7 @@ public class PhyloPipeline {
 		String logfile = clp.getValues("logfile", runName+".log")[0];
 		//set log file name, based on run name, if it has not already been set
 		System.setProperty("logfile.name",System.getProperty("logfile.name", logfile));
-		logger = Logger.getLogger("PEPR");
+//		logger = Logger.getLogger("PEPR");
 		logger.info("Starting " + new Date());
 		System.out.println("logger configured with log file name '" + System.getProperty("logfile.name"));
 		System.out.println("logger: " + logger);
@@ -285,7 +286,7 @@ public class PhyloPipeline {
 
 		TextFile hitPairFile = null;
 		if(runBlast) {
-			logger.info("run blast");
+			logger.info("run blast on " + homologySearchSequenceFiles.length + " sequence files");
 			hitPairFile = runBlast(homologySearchSequenceFiles, 
 					homologyThreads, hitsPerQuery, evalueCutoff);
 		} else if(runBlat) {
@@ -874,6 +875,7 @@ public class PhyloPipeline {
 	 */
 	private TextFile runBlast(FastaSequenceFile[] inputSequenceFiles, 
 			int threads, int hitsPerQuery, float evalue) {
+		System.out.println("PhyloPipeline.runBlast() inputSequenceFiles: " + inputSequenceFiles.length);
 		TextFile r = null;
 		BlastRunner br = new BlastRunner();
 		br.setSequenceSets(inputSequenceFiles);

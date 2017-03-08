@@ -1082,7 +1082,7 @@ public class AdvancedTree {
 				r[node] = 0;
 			} else {
 				r[node] = 
-					descendantSupportSums[node] / nodeDescendantCounts[node];
+					(int) Math.floor((double)descendantSupportSums[node] / nodeDescendantCounts[node]);
 			}
 		}
 

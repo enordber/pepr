@@ -211,7 +211,6 @@ public class PhylogeneticTreeRefiner {
 			logger.info("PhylogeneticTreeRefiner run pipeline with unique_species set to "
 					+ useUniqueSpeciesFilter);
 			int outgroupCount = Math.min(outgroupFiles.length, 2);
-			outgroupCount = 1;
 			//additional pipeline args
 			pipelineCLP.addArgs(
 					new String[]{

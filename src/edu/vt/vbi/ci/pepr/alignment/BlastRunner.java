@@ -192,7 +192,9 @@ public class BlastRunner {
 		try {
 			File tempFile = File.createTempFile("cat", ".faa", new File(System.getProperty("user.dir")));
 			BufferedWriter bw = new BufferedWriter( new FileWriter(tempFile));
-			tempFile.deleteOnExit();
+			if(!keepFiles) {
+				tempFile.deleteOnExit();
+			}
 			//write each line from each sequenceSet to the concatenated file
 			for(int i = 0; i < querySequenceFiles.length; i++) {
 				int fileLineCount = querySequenceFiles[i].getLineCount();
@@ -312,7 +314,9 @@ public class BlastRunner {
 				concatenatedSequenceSet.openFile();
 				for(int i = 0; i < querySets.length; i++) {
 					File f = File.createTempFile("cat", ".faa", directory);
-					f.deleteOnExit();
+					if(!keepFiles) {
+						f.deleteOnExit();
+					}
 					FileWriter fw = new FileWriter(f);
 					//add sequences to this file until it has at 
 					//least linesPerFile lines
@@ -534,6 +538,7 @@ public class BlastRunner {
 
 		public void run() {
 
+			System.out.println("BlastRunner.BlastRunnable.run() sequenceSets: " + sequenceSets.length);
 			blastallPath = ExecUtilities.getCommandPath("blastall");
 			formatdbPath = ExecUtilities.getCommandPath("formatdb");
 

@@ -139,8 +139,6 @@ public class RAxMLRunner {
 				}
 				//run raxml, and wait for it to finish
 				CommandResults results = ExecUtilities.exec(raxmlCommand);
-				//grab the tree string from the result file
-
 			} catch (IOException ioe) {
 				logger.error(ioe);
 			}

@@ -46,7 +46,7 @@ public class TreeComparison {
 
 		String[] treeFileNames = clp.getValues(HandyConstants.TREE_FILE);
 		boolean doRF = clp.getValues(HandyConstants.RF, HandyConstants.TRUE)[0].equalsIgnoreCase(HandyConstants.TRUE);
-		boolean doConsel = clp.getValues(HandyConstants.CONSEL, HandyConstants.TRUE)[0].equalsIgnoreCase(HandyConstants.TRUE);
+		boolean doConsel = clp.getValues(HandyConstants.CONSEL, HandyConstants.FALSE)[0].equalsIgnoreCase(HandyConstants.TRUE);
 		boolean doTreeDist = clp.getValues(HandyConstants.TREE_DIST, HandyConstants.TRUE)[0].equalsIgnoreCase(HandyConstants.TRUE);
 		boolean useLengths = clp.getValues(HandyConstants.USE_LENGTHS, HandyConstants.TRUE)[0].equalsIgnoreCase(HandyConstants.TRUE);
 		boolean compareSupports = clp.getValues(HandyConstants.SUPPORT_REPS, HandyConstants.FALSE)[0].equalsIgnoreCase(HandyConstants.TRUE);
@@ -83,7 +83,7 @@ public class TreeComparison {
 			String[] outgroupTaxa = new String[0];
 			try {
 				FastaSequenceFile[] outgroupFiles = 
-					loadSequenceFiles(outgroupFileNames);
+						loadSequenceFiles(outgroupFileNames);
 				outgroupTaxa = getDistinctTaxa(outgroupFiles);
 				Arrays.sort(outgroupTaxa);
 				for(int i = 0; i < outgroupTaxa.length; i++) {
@@ -131,7 +131,7 @@ public class TreeComparison {
 			//System.out.println("parsing " + advancedTrees.length + " trees");
 			for(int i = 0; i < initialTrees.length; i++) {
 				trees[i] = 
-					TreeParser.parseTreeString(initialTrees[i].getTreeString(useLengths, true));
+						TreeParser.parseTreeString(initialTrees[i].getTreeString(useLengths, true));
 				advancedTrees[i] = new AdvancedTree(initialTrees[i]);
 			}
 			System.out.println("done parsing");
@@ -143,7 +143,7 @@ public class TreeComparison {
 
 			if(doRF) {
 				compareAllvsAll(trees);
-//				compareAllvsAll(advancedTrees);
+				//				compareAllvsAll(advancedTrees);
 			}
 
 			if(doConsel) {
@@ -204,14 +204,14 @@ public class TreeComparison {
 		standardTreeFileName = "/Users/enordber/vbi/brucella/fullTree100k/brucellaFullTree100k.nwk";
 
 		String comparisonTreeFileName = 
-			"/Users/enordber/vbi/brucella/individualTrees/brucellaIndividualTreeLog";
+				"/Users/enordber/vbi/brucella/individualTrees/brucellaIndividualTreeLog";
 		comparisonTreeFileName = 
-			"/Users/enordber/vbi/fastTree/enteroTrees_2.nwk";
+				"/Users/enordber/vbi/fastTree/enteroTrees_2.nwk";
 
 		String fileType = HandyConstants.TAB_DELIMITED;
 
 		String mrTfileName = 
-			"/Users/enordber/vbi/brucella/Brucella_full.nex.run1.t";
+				"/Users/enordber/vbi/brucella/Brucella_full.nex.run1.t";
 
 		//		comparisonTreeFileName = mrTfileName;
 		//		fileType = HandyConstants.MR_T_FILE;
@@ -227,7 +227,7 @@ public class TreeComparison {
 			e.printStackTrace();
 		}
 
-//				compareAllvsAll(comparisonTrees);
+		//				compareAllvsAll(comparisonTrees);
 
 		compareSlidingWindow(comparisonTrees, 10);
 
@@ -274,7 +274,7 @@ public class TreeComparison {
 					r[i][j] = rfDistance;
 					r[j][i] = rfDistance;
 
-					//					System.out.println(i + " vs " + j + ": " + rfDistance);
+					System.out.println(i + " vs " + j + ": " + rfDistance);
 					double treeDist = getBranchDistance(trees[i], trees[j]);
 					double discDist = getDiscrepantBranchDistance(trees[i], trees[j]);
 					System.out.println("Tree Distance: " + i + " vs " + j +
@@ -300,7 +300,7 @@ public class TreeComparison {
 
 		HashSet[] treeBipartSets = new HashSet[trees.length];
 		String[] taxonNames = trees[0].getLeafLabels();
-		
+
 		System.out.println("Get Bipartitions for trees");
 		for(int i = 0; i < treeBipartSets.length; i++) {
 			Bipartition[] treeBiparts = trees[i].getBipartitions(taxonNames);
@@ -311,21 +311,21 @@ public class TreeComparison {
 			treeBipartSets[i] = hs;
 		}
 		System.out.println("done getting Bipartitions");
-		
+
 		for(int i = 0; i < r.length; i++) {
 			for(int j = i+1; j < r.length; j++) {
 				HashSet union = new HashSet(treeBipartSets[i]);
 				union.addAll(treeBipartSets[j]);
-				
+
 				HashSet intersection = new HashSet(treeBipartSets[i]);
 				intersection.retainAll(treeBipartSets[j]);
-				
+
 				r[i][j] = (union.size() - intersection.size()) /2;
 				System.out.println("Tree Distance: " + i + " vs " + j +
 						"\t RF: " + r[i][j]); 
 			}
 		}
-		
+
 		return r;
 	}
 
@@ -342,15 +342,15 @@ public class TreeComparison {
 		Bipartition[] r = null;
 		ArrayList<Bipartition> bipartList = new ArrayList<Bipartition>();
 		String[] leaves = tree.getLeafLabels();
-		
+
 		//sort the leaves, to allow using binary search to more quickly
 		//find the indices.
 		Arrays.sort(leaves);
 		int[] preorderTraversalSequence = tree.getPreorderTraversalSequence();
-		
+
 		for(int i = 0; i < preorderTraversalSequence.length; i++) {
 			String[] descendants = 
-				tree.getDescendantLeaves(preorderTraversalSequence[i]);
+					tree.getDescendantLeaves(preorderTraversalSequence[i]);
 			if(descendants.length > 1 && descendants.length < leaves.length -1) {
 				ExtendedBitSet ebs = new ExtendedBitSet();
 				//set the bit for each leaf that is present in the list of
@@ -372,11 +372,11 @@ public class TreeComparison {
 	}
 
 	private void compareBranchSupports(AdvancedTree treeA, AdvancedTree treeB) {
-		
+		System.out.println("TreeComparison.compareBranchSupports()");
 		String[] tempOG = new String[]{treeA.getLeafLabels()[0]};
 		treeA.setOutGroup(tempOG);
 		treeB.setOutGroup(tempOG);
-		
+
 		int[] treeASupports = treeA.getBranchSupports();
 		int[] treeBSupports = treeB.getBranchSupports();
 
@@ -396,11 +396,12 @@ public class TreeComparison {
 		ArrayList pairStringList = new ArrayList(branchSupports.length);
 		HashMap<String,Integer> pairToCountMap = new HashMap<String,Integer>();
 
+		System.out.println("Branch support pairs. -1 indicates branch is absent in one tree.");
 		for(int i = 0; i < branchSupports.length;i++) {
 			String pairString = "" + branchSupports[i][0] + ", " +
-			branchSupports[i][1];
-//		System.out.println(pairString);
-		Integer count = pairToCountMap.get(pairString);
+					branchSupports[i][1];
+			System.out.println(pairString);
+			Integer count = pairToCountMap.get(pairString);
 			if(count == null) {
 				count = new Integer(0);
 			}
@@ -425,8 +426,8 @@ public class TreeComparison {
 		for(int i = 0; i < branchSupports.length;i++) {
 			if(branchSupports[i][0] < 0) {
 				String pairString = "" + branchSupports[i][0] + ", " +
-    				branchSupports[i][1];
-				
+						branchSupports[i][1];
+
 				Integer count = pairToCountMap.get(pairString);
 				if(count == null) {
 					count = new Integer(0);
@@ -435,7 +436,7 @@ public class TreeComparison {
 				pairToCountMap.put(pairString, count);
 			}
 		}
-		
+
 		String[] distinctPairs = new String[pairToCountMap.size()];
 		pairToCountMap.keySet().toArray(distinctPairs);
 		Arrays.sort(distinctPairs);
@@ -486,7 +487,7 @@ public class TreeComparison {
 		//get the tree String from each line, as long as the lines have trees
 		char equalsChar = '=';
 		ArrayList treeStringList = 
-			new ArrayList(tf.getLineCount()-firstTreeLine);
+				new ArrayList(tf.getLineCount()-firstTreeLine);
 		for(int i = firstTreeLine; i < tf.getLineCount(); i++) {
 			String line = tf.getLine(i);
 			int equalsIndex = line.indexOf(equalsChar);
@@ -511,7 +512,7 @@ public class TreeComparison {
 			System.out.print(".");
 		}
 		System.out.println("TreeComparison.loadComparisonTreesFromMrTFile() " +
-		"done parsing trees");
+				"done parsing trees");
 
 	}
 
@@ -558,7 +559,7 @@ public class TreeComparison {
 		for(int i = 0; i < treeDistancesFromStandard.length; i++) {
 			if(comparisonTrees[i] != null) {
 				treeDistancesFromStandard[i] = 
-					getRFDistance(standardTree, comparisonTrees[i]);
+						getRFDistance(standardTree, comparisonTrees[i]);
 			}
 		}
 	}
@@ -676,10 +677,10 @@ public class TreeComparison {
 					if(counterpartLeafSets[1].size() < counterpartLeafSets[0].size()) {
 						smallerCounterpartLeafSet = counterpartLeafSets[1];
 					}
-//					System.out.println(smallerLeafSet);
-//					System.out.println(smallerCounterpartLeafSet);
-//					System.out.println("counterpart found for tree1Branches " + i + " size: " + smallerLeafSet.size() + ", " 
-//						 + tree1Support + " --> " + tree2Support);
+					//					System.out.println(smallerLeafSet);
+					//					System.out.println(smallerCounterpartLeafSet);
+					//					System.out.println("counterpart found for tree1Branches " + i + " size: " + smallerLeafSet.size() + ", " 
+					//						 + tree1Support + " --> " + tree2Support);
 				}
 			} else {
 				System.out.println("Branch removed. Initial support: " + tree1Support);
@@ -698,20 +699,22 @@ public class TreeComparison {
 		double sum = 0;
 		for(int i = 0; i < removedSupports.length; i++) {
 			removedSupports[i] = removedBranchSupports.get(i);
-//			if(removedSupports[i] == removedSupports[1])
-//			{
-				sum += removedSupports[i];
-//			}
+			//			if(removedSupports[i] == removedSupports[1])
+			//			{
+			sum += removedSupports[i];
+			//			}
 		}
 		double meanRemovedSupport = sum / removedSupports.length;
 		Arrays.sort(removedSupports);
 		for(int i = 0; i< removedSupports.length; i++) {
 			System.out.println(removedSupports[i]);
 		}
-		double medianRemovedSupport = removedSupports[removedSupports.length/2];
-		System.out.println("median support value of removed branches: " + medianRemovedSupport);
+		if(removedSupports.length > 0) {
+			double medianRemovedSupport = removedSupports[removedSupports.length/2];
+			System.out.println("median support value of removed branches: " + medianRemovedSupport);
+		}
 		System.out.println("mean support value of removed branches: " + meanRemovedSupport);
-		
+
 		ArrayList<Double> tree1NonNanSupports = new ArrayList<Double>();
 		sum = 0;
 		for(int i = 0; i < tree1BranchSupports.length; i++) {
@@ -720,12 +723,13 @@ public class TreeComparison {
 				sum += tree1BranchSupports[i];
 			}
 		}
-		Collections.sort(tree1NonNanSupports);
-		double medianAll = tree1NonNanSupports.get(tree1NonNanSupports.size()/2);
-		double meanAll = sum / tree1NonNanSupports.size();
-		System.out.println("median support value of all branches in tree1: " + medianAll);
-		System.out.println("mean support value of all branches in tree1: " + meanAll);
-
+		if(tree1NonNanSupports.size() > 0) {
+			Collections.sort(tree1NonNanSupports);
+			double medianAll = tree1NonNanSupports.get(tree1NonNanSupports.size()/2);
+			double meanAll = sum / tree1NonNanSupports.size();
+			System.out.println("median support value of all branches in tree1: " + medianAll);
+			System.out.println("mean support value of all branches in tree1: " + meanAll);
+		}
 		//add any tree2 branches that have not already been handled. Because 
 		//these have not been handled, it means they don't have a counterpart
 		//in tree1. So add the squares of these branch lengths, with no need
@@ -804,7 +808,7 @@ public class TreeComparison {
 		r = Math.sqrt(r) / Math.sqrt(sumOfSquaresTree1 + sumOfSquaresTree2);
 		return r;
 	}
-	
+
 	public String[] runConsel(SequenceAlignment alignment, BasicTree[] trees, 
 			String processors, String matrix) {
 		String[] r = null;
@@ -837,8 +841,8 @@ public class TreeComparison {
 			//run raxml to get per-site log likelihoods
 			String raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 			String raxmlCommand = raxmlPath + " -f g -m "
-			+ matrix + " -T " + processors + " -z " + treeFileName 
-			+ " -s " + alignmentFileName + " -n " + raxmlRunName;
+					+ matrix + " -T " + processors + " -z " + treeFileName 
+					+ " -s " + alignmentFileName + " -n " + raxmlRunName;
 			System.out.println(raxmlCommand);
 			ExecUtilities.exec(raxmlCommand);
 
@@ -846,15 +850,15 @@ public class TreeComparison {
 			//will have unique names.
 			String raxmlOutFileName = "RAxML_perSiteLLs." + raxmlRunName;
 			String renamedRaxmlOutFile = alignmentFileName + "_perSiteLLs." +
-			raxmlRunName;
+					raxmlRunName;
 			File raxmlOut = new File(raxmlOutFileName);
 			raxmlOut.renameTo(new File(renamedRaxmlOutFile));
 
 			//run makermt on per site likelihood file
 			String makermtPath = ExecUtilities.getCommandPath("makermt");
 			String makermtCommnd = makermtPath + 
-			" -b 10" + //-b 10 multiplies the number of bootstraps by 10, for less error
-			" --puzzle " + renamedRaxmlOutFile;
+					" -b 10" + //-b 10 multiplies the number of bootstraps by 10, for less error
+					" --puzzle " + renamedRaxmlOutFile;
 			System.out.println(makermtCommnd);
 			ExecUtilities.exec(makermtCommnd);			
 			String makermtOutFileName = alignmentFileName + "_perSiteLLs";
@@ -896,7 +900,7 @@ public class TreeComparison {
 	}
 
 	private FastaSequenceFile[] loadSequenceFiles(String[] sequenceFileNames) 
-	throws IOException {
+			throws IOException {
 		FastaSequenceFile[] r = new FastaSequenceFile[sequenceFileNames.length];
 		for(int i = 0; i < r.length; i++) {
 			r[i] = new FastaSequenceFile(sequenceFileNames[i]);

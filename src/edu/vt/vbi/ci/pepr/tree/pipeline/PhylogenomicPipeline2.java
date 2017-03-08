@@ -402,7 +402,7 @@ public class PhylogenomicPipeline2 {
 					inputSequenceSetProvider,
 					bootstrapReps, 
 					supportTreeMethod, treeThreads,
-					outputFileName);
+					outputFileName, mlMatrix);
 		} else if(single) {
 			if(verboseLevel > 0) {
 				System.out.println("do single");
@@ -995,7 +995,7 @@ public class PhylogenomicPipeline2 {
 		//estimate amount of RAM needed for each support tree
 		//This is based on a formula derived from measurements of different
 		//sized alignments used with FastTree
-		//RAM in bytes =~ 100*L * N + 20000*L
+		//RAM in bytes =~ 100*L * N + 2000*L
 		//where L is the alignment length and N is the number of taxa.
 		//For this calculation, L will be half of the complete alignment,
 		//since support trees are built from half of the sequences
@@ -1043,7 +1043,11 @@ public class PhylogenomicPipeline2 {
 		int threadsToWait = fullTreeThreads;
 
 		//threadsToWait might need to be increased for RAxML 
-		long raxmlBytes = (N-2) * L * 80 * 8; //why is it * 80 * 8 instead of * 640?
+		//why is it * 80 * 8 instead of * 640? - because it's from raxml documentation:
+		//http://sco.h-its.org/exelixis/web/software/raxml/:
+		//"MEM(AA+GAMMA) = (n-2) * m * (80 * 8) bytes"  
+		//where m is number of patterns, so this should overestimate
+		long raxmlBytes = (N-2) * L * 80 * 8; 
 
 		//Figure out if there is enough RAM to run the RAxML on the alignment 
 		//(which is either used for the full tree, or for adding branch lengths
@@ -1067,7 +1071,7 @@ public class PhylogenomicPipeline2 {
 		//start and wait for the jack knife threads
 		String[] jackknifeTrees = getGeneWiseJackKnifeTrees(provider, 
 				jackknifeSize, jackknifeReps, supportTreeThreads, 
-				fullTreeThread, threadsToWait, supportTreeMethod);
+				fullTreeThread, threadsToWait, supportTreeMethod, mlMatrix);
 
 		//get the full tree string
 		try {
@@ -1157,7 +1161,7 @@ public class PhylogenomicPipeline2 {
 
 	private void buildGeneWiseJackknifeTrees(
 			SequenceSetProvider provider, int reps,
-			String treeMethod, int treeThreads, String outputFileName) {
+			String treeMethod, int treeThreads, String outputFileName, String mlMatrix) {
 		logger.info("PhylogenomicPipeline2.buildGeneWiseJackknifeTrees() "
 				+ reps + " trees using " + treeThreads + " threads and "
 				+ treeMethod + " as tree-building method");
@@ -1166,7 +1170,7 @@ public class PhylogenomicPipeline2 {
 		//start and wait for the jack knife threads
 		String[] jackknifeTrees = getGeneWiseJackKnifeTrees(provider, 
 				jackknifeSize, reps, treeThreads, 
-				null, 0, treeMethod);
+				null, 0, treeMethod, mlMatrix);
 
 		try {
 			FileWriter fw  = new FileWriter(outputFileName);
@@ -1202,10 +1206,11 @@ public class PhylogenomicPipeline2 {
 	 *                      This will probably be the number of Thread (or
 	 *                      processes) being used to run the full tree. (For 
 	 *                      example, the -T parameter with RAxML)
+	 * @param mlMatrix 
 	 */
 	private String[] getGeneWiseJackKnifeTrees(SequenceSetProvider provider,
 			int size, int reps, int threadCount, Thread waitFor, 
-			int threadsToWait, String supportTreeMethod) {
+			int threadsToWait, String supportTreeMethod, String mlMatrix) {
 		logger.info("PhylogenomicPipleline2.getGeneWiseJackKnifeTrees() " +
 				"reps: " + reps + " threadsToWait: " + threadsToWait);
 		String[] r = null;
@@ -1223,6 +1228,7 @@ public class PhylogenomicPipeline2 {
 			}
 
 			runnables[i].setTreeBuildingMethod(supportTreeMethod);
+			runnables[i].setMatrix(mlMatrix);
 			String conTree = getConstraintTree();
 			if(conTree != null) {
 				runnables[i].setConstraintTree(conTree);
@@ -1506,7 +1512,7 @@ public class PhylogenomicPipeline2 {
 					sequenceSet = (FastaSequenceSet) sequenceIterator.next();
 				}
 			} catch(Exception e) {
-				System.out.println("EXCEPTION from eric's stupid catch any Exception block");
+				System.out.println("EXCEPTION from eric's stupid 'catch any Exception' block in AlignmentRunnable");
 				e.printStackTrace();
 			}
 			logger.info("<AlignmentRunnable.run() " + Thread.currentThread().getName());
@@ -1529,6 +1535,7 @@ public class PhylogenomicPipeline2 {
 		private ArrayList treeStrings = new ArrayList();
 		private String treeBuildingMethod = HandyConstants.MAXIMUM_LIKELIHOOD;
 		private String constraintTree;
+		private String mlMatrix;
 
 		/**
 		 * 
@@ -1555,6 +1562,10 @@ public class PhylogenomicPipeline2 {
 
 		public void setTreeBuildingMethod(String method) {
 			treeBuildingMethod = method;
+		}
+		
+		public void setMatrix(String mlMatrix) {
+			this.mlMatrix = mlMatrix;
 		}
 
 		public void run() {
@@ -1590,6 +1601,7 @@ public class PhylogenomicPipeline2 {
 				PhylogeneticTreeBuilder treeBuilder = 
 						new PhylogeneticTreeBuilder();
 				treeBuilder.setTreeBuildingMethod(treeBuildingMethod);
+				treeBuilder.setMLMatrix(mlMatrix);
 				treeBuilder.setBootstrapReps(0);
 				treeBuilder.setAlignment(alignment);
 				if(constraintTree != null) {
