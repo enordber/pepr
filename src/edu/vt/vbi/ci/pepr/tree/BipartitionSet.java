@@ -196,7 +196,7 @@ public class BipartitionSet {
 	 * one where one side of the partition has zero or one member.
 	 * @return
 	 */
-	private Bipartition[] getNonTrivialBipartitions() {
+	public Bipartition[] getNonTrivialBipartitions() {
 		Bipartition[] r = null;
 		HashSet biparts = new HashSet();
 		for(int i = 0; i < bipartitions.length; i++) {
@@ -220,6 +220,10 @@ public class BipartitionSet {
 	 */
 	public void printNonTrivialBipartitionsAndCounts() {
 		printBipartitionsAndCounts(getNonTrivialBipartitions());
+	}
+	
+	public void printBipartitionsAndCounts() {
+		printBipartitionsAndCounts(getBipartitions());
 	}
 
 	public SequenceAlignment getBipartitionsAsSequenceAlignment() {

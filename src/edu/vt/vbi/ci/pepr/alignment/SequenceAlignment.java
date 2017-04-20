@@ -688,29 +688,33 @@ public class SequenceAlignment {
 	}
 
 	/**
-	 * Returns Bipartitions for all columns that have no more than
+	 * Returns non-trivial Bipartitions for all columns that have no more than
 	 * maxState different character states.
 	 * 
-	 * @param maxState
+	 * @param maxStates
 	 * @return
 	 */
-	public Bipartition[] getBipartitionsForColumns(int maxState) {
+	public Bipartition[] getBipartitionsForColumns(int maxStates) {
+		System.out.println(">SequenceAlignment.getBipartitionsForColumns() maxStates: " + maxStates);
 		Bipartition[] r = null;
 		ArrayList bipartitions = new ArrayList();
 		int columnCount = getLength();
 
 		for(int i = 0; i < columnCount; i++) {
 			Bipartition[] columnBiparts = getBipartitionsForColumn(i);
-			if(columnBiparts == null) {
-			}
-			if(columnBiparts != null && columnBiparts.length <= maxState) {
+			if(columnBiparts != null && columnBiparts.length <= maxStates) {
 				for(int j = 0; j < columnBiparts.length; j++) {
-					bipartitions.add(columnBiparts[j]);
+					//add if not trivial
+					int cardinality = columnBiparts[j].getSmallerSide().cardinality();
+					if(cardinality > 1) {
+						bipartitions.add(columnBiparts[j]);
+					}
 				}
 			}
 		}
 		r = new Bipartition[bipartitions.size()];
 		bipartitions.toArray(r);
+		System.out.println("<SequenceAlignment.getBipartitionsForColumns() bipartitions: " + r.length);
 		return r;
 	}
 

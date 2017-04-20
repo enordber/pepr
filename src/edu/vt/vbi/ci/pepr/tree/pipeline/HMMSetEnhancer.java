@@ -332,9 +332,11 @@ public class HMMSetEnhancer {
 		ArrayList fileList = new ArrayList(files.length);
 
 		for(int i = 0; i < files.length; i++) {
-			FastaSequenceFile fsf = new FastaSequenceFile(files[i].getAbsolutePath());
-			if(fsf.getSequenceCount() >= minTaxa && fsf.getSequenceCount() <= maxTaxa) {
-				fileList.add(fsf);
+			if(files[i].exists() && files[i].length() > 0) {
+				FastaSequenceFile fsf = new FastaSequenceFile(files[i].getAbsolutePath());
+				if(fsf.getSequenceCount() >= minTaxa && fsf.getSequenceCount() <= maxTaxa) {
+					fileList.add(fsf);
+				}
 			}
 		}
 		initialHGFiles = new FastaSequenceFile[fileList.size()];

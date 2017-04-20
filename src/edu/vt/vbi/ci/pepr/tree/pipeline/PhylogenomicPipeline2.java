@@ -365,11 +365,12 @@ public class PhylogenomicPipeline2 {
 			buildTreesFromSamples(inputSequenceSetProvider);
 		}
 
+		String finalTree = null;
+
 		if(nj) {
-			buildConcatenatedNeighborJoiningTree(inputSequenceSetProvider);
+			finalTree = buildConcatenatedNeighborJoiningTree(inputSequenceSetProvider);
 		}
 
-		String finalTree = null;
 		if(concatenated && geneWiseJackknife) {
 			if(verboseLevel > 0) {
 				System.out.println("do concatenated and gene-wise jackknife");
@@ -428,11 +429,16 @@ public class PhylogenomicPipeline2 {
 				" sequence sets, based on bipartition support");
 		FastaSequenceSet[] sequenceSets = provider.getAllSequenceSets();
 		ConcatenatedSequenceAlignment cat = getConcatenatedAlignment(provider);
-		int topN = cat.getNTax() *4;
+		int topN = cat.getNTax() * 4;
 		BipartitionSet fullBipartSet = 
 				new BipartitionSet(cat.getBipartitionsForColumns(10000), topN);
+//				new BipartitionSet(cat.getBipartitionsForColumns(10000));
 		fullBipartSet.setTaxa(cat.getTaxa());
-		//		fullBipartSet.printNonTrivialBipartitionsAndCounts();
+//		fullBipartSet = new BipartitionSet(fullBipartSet.getNonTrivialBipartitions(), topN);
+//		fullBipartSet.setTaxa(cat.getTaxa());
+		System.out.println("PhylogenomicPipeline2.filterForCongruence() topN (" + topN + ") bipartitions:");
+		fullBipartSet.printBipartitionsAndCounts();
+//		fullBipartSet.printNonTrivialBipartitionsAndCounts();
 
 		SequenceAlignment[] alignments = cat.getAlignments();
 		Bipartition[][] alignmentBiparts = 
@@ -474,6 +480,8 @@ public class PhylogenomicPipeline2 {
 		//		int percentileIndex = (int) (sortMeans.length - (sortMeans.length*percentileToRemove));
 		//		double maxCost = sortMeans[percentileIndex];
 		double maxCost = meanOfMeans + (sdOfMeans*2);
+//		maxCost = meanOfMeans + sdOfMeans;
+//		maxCost = meanOfMeans;
 		System.out.println("remove any alignments with meanCost > " +
 				maxCost);
 
@@ -489,6 +497,7 @@ public class PhylogenomicPipeline2 {
 		}
 		FastaSequenceSet[] keepSequences = new FastaSequenceSet[keepSequencesList.size()];
 		keepSequencesList.toArray(keepSequences);
+		System.out.println("Discarded: " + (sequenceSets.length - keepSequences.length) + "\tKept: " + keepSequences.length);
 
 		r = new SequenceSetProviderImpl(keepSequences);
 
@@ -782,8 +791,8 @@ public class PhylogenomicPipeline2 {
 					sequenceSetToAlignment.put(sequenceSet, r);
 				}
 			}
-			
-			new File(alignmentFileName).deleteOnExit();
+//			System.out.println("alignmentFileName: " + alignmentFileName);
+//			new File(alignmentFileName).deleteOnExit();
 		} 
 
 		return r;

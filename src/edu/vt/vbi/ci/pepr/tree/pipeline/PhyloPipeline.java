@@ -152,7 +152,7 @@ public class PhyloPipeline {
 
 		//See if any 'track' is specified, and load the relevant properties.
 		//Tracks can be a starting point and be modified by other properties.
-		String track = clp.getValues(HandyConstants.TRACK, HandyConstants.FALSE)[0];
+		String track = clp.getValues(HandyConstants.TRACK, HandyConstants.TRACK)[0];
 		clp = new CommandLineProperties();
 		if(!track.equals(HandyConstants.FALSE)) {
 			String[] trackProperties = getTrackProperties(track);
@@ -364,7 +364,7 @@ public class PhyloPipeline {
 
 		float minTaxaMultiplier = 
 				Float.parseFloat(clp.getValues(HandyConstants.MIN_TAXA_MULTIPLIER,
-						"0.8")[0]);
+						"0.99")[0]);
 		int maxTaxa = 
 				Integer.parseInt(clp.getValues(HandyConstants.MAX_TAXA,
 						"" + inputSequenceFiles.length)[0]);
@@ -763,7 +763,7 @@ public class PhyloPipeline {
 
 		for(int i = 0; i < lineCount; i++) {
 			String[] fields = tabPattern.split(hitPairFile.getLine(i));
-			if(fields.length > 1) {
+			if(fields.length > scoreField) {
 				String id1 = new String(fields[id1Field]);
 				String id2 = new String(fields[id2Field]);
 				int index1 = Arrays.binarySearch(ids, id1);
@@ -938,13 +938,13 @@ public class PhyloPipeline {
 		propertyLines.add("-" + HandyConstants.PREALIGN);
 		propertyLines.add(HandyConstants.TRUE);
 		propertyLines.add("-" + HandyConstants.TARGET_MIN_GENE_COUNT);
-		propertyLines.add("500");
+		propertyLines.add("9999");
 		propertyLines.add("-" + HandyConstants.MIN_TAXA_MULTIPLIER);
-		propertyLines.add("0.8");
+		propertyLines.add("0.99");
 		propertyLines.add("-" + HandyConstants.UNIQUE_SPECIES);
 		propertyLines.add(HandyConstants.TRUE);
 		propertyLines.add("-" + HandyConstants.CONGRUENCE_FILTER);
-		propertyLines.add(HandyConstants.TRUE);
+		propertyLines.add(HandyConstants.FALSE);
 		propertyLines.add("-" + HandyConstants.REFINE);
 		propertyLines.add(HandyConstants.TRUE);
 

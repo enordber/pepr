@@ -78,6 +78,7 @@ public class FastTreeRunner implements Runnable{
 
 			//execute the command and capture the output. The newick format tree
 			//is written to stdout.
+			System.out.println("FastTreeRunner.run() build tree with command: " + fastTreeCommand);
 			CommandResults results = ExecUtilities.exec(fastTreeCommand);
 			if(results.getStdout().length > 0) {
 				String treeString = results.getStdout()[0];

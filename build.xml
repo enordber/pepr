@@ -32,6 +32,8 @@
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/pepr/lib"/>
 
+  	<copy file="BLOSUM62" todir="${build}"/>
+
     <!-- Put everything in ${build} into the pepr.jar file -->
     <jar jarfile="${dist}/pepr/lib/pepr.jar" basedir="${build}"/>
 
@@ -48,6 +50,7 @@
   	<exec executable="cp">
   	    <arg line="-R ${bin}_linux ${dist}/pepr/bin"/>
   	</exec>
+  	
 <!--  	
     <copy todir="${dist}/pepr/bin">
       <fileset dir="${bin}_linux"/>
