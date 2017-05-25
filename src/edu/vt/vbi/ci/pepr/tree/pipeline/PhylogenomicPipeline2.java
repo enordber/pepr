@@ -244,7 +244,7 @@ public class PhylogenomicPipeline2 {
 		}
 		String mlMatrix = 
 				commandLineProperties.getValues(
-						HandyConstants.ML_MATRIX, "PROTGAMMALGF")[0];
+						HandyConstants.ML_MATRIX, "PROTGAMMAWAG")[0];
 
 		if(doMatrixEvaluation) {
 			//get list of matrices o be evaluated

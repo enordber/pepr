@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 import edu.vt.vbi.ci.pepr.alignment.BlastRunner;
 import edu.vt.vbi.ci.pepr.alignment.BlatRunner;
 import edu.vt.vbi.ci.pepr.stats.StatisticsUtilities;
+import edu.vt.vbi.ci.pepr.tree.BasicTree;
 import edu.vt.vbi.ci.pepr.tree.PhylogeneticTreeRefiner;
 import edu.vt.vbi.ci.util.CommandLineProperties;
 import edu.vt.vbi.ci.util.CommandResults;
@@ -57,6 +58,7 @@ public class PhyloPipeline {
 	private int verbose = 1;
 	private String tree;
 	private String[] selectedOutgroupGenomes;
+	private boolean writeJSON = false;
 
 	public static void main(String[] args) {
 		startTime = System.currentTimeMillis();
@@ -171,6 +173,7 @@ public class PhyloPipeline {
 
 		if(clp.getValues(HandyConstants.PATRIC, HandyConstants.FALSE)[0].equals(HandyConstants.TRUE)) {
 			FastaUtilities.setStripPipeAndSuffix(false);
+			writeJSON = true;
 		}
 		
 		//Determine number of Threads to use. By default, every thread parameter
@@ -493,6 +496,25 @@ public class PhyloPipeline {
 
 		PEPRTracker.setTree(getTree());
 		printTreeAndOutgroupFile();
+		if(writeJSON) {
+			printJSONTree();
+		}
+	}
+
+	private void printJSONTree() {
+		String newickTree = getTree();
+		String jsonTree = newickToPATRICJSON(newickTree);
+	}
+	
+	private String newickToPATRICJSON(String newickTree) {
+		String r = null;
+		BasicTree tree = new BasicTree(newickTree);
+		String[] leaves = tree.getLeaves();
+		//verify that leaves are in <genome_name>@<genome_id> format
+		//extract genome name and genome id to make map
+		//replace leaves with just genome id
+		String delimiter = "@";
+		return r;
 	}
 
 	private void printTreeAndOutgroupFile() {
