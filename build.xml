@@ -32,6 +32,13 @@
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/pepr/lib"/>
 
+  	<!-- unzip any jar files in the lib directory, and put the contents in  -->
+    <!-- the build directory so they will be packed into the distribution jar file-->
+
+  	<unzip dest="${build}">
+        <fileset dir="lib" includes="*.jar" />
+    </unzip>
+
   	<copy file="BLOSUM62" todir="${build}"/>
 
     <!-- Put everything in ${build} into the pepr.jar file -->
