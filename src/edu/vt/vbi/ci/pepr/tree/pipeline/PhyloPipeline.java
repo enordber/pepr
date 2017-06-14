@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONObject;
 
 import edu.vt.vbi.ci.pepr.alignment.BlastRunner;
 import edu.vt.vbi.ci.pepr.alignment.BlatRunner;
@@ -497,23 +498,83 @@ public class PhyloPipeline {
 		PEPRTracker.setTree(getTree());
 		printTreeAndOutgroupFile();
 		if(writeJSON) {
-			printJSONTree();
+			try {
+				printJSONTree();
+			} catch (IOException e) {
+				System.out.println("There was a problem writing the PATRIC json output file: ");
+				e.printStackTrace();
+			}
 		}
 	}
 
-	private void printJSONTree() {
+	private void printJSONTree() throws IOException {
 		String newickTree = getTree();
-		String jsonTree = newickToPATRICJSON(newickTree);
+		String jsonTree = newickToPATRICJSON(newickTree, selectedOutgroupGenomes, "unknown", "unknown");
+		String jsonFileName = runName + ".json";
+		logger.info("writing json output to file " + jsonFileName);
+		FileWriter fw = new FileWriter(jsonFileName);
+		fw.write(jsonTree);
+		fw.close();
 	}
 	
-	private String newickToPATRICJSON(String newickTree) {
+	private static String newickToPATRICJSON(String newickTree, String[] outgroupGenomes, String taxonName, String taxonRank) {
 		String r = null;
+		String delimiter = "_@_";
+		int nameIndex = 0;
+		int idIndex = 1;
+		String idOnlyNewick = newickTree;
 		BasicTree tree = new BasicTree(newickTree);
 		String[] leaves = tree.getLeaves();
+		HashMap<String,String> nameToId = new HashMap<String,String>();
+		HashSet<String> outgroup = new HashSet<String>();
+		for(String og: outgroupGenomes) {
+			String[] parts = og.split(delimiter);
+			outgroup.add(parts[nameIndex].replaceAll("_", " "));
+		}
+		
 		//verify that leaves are in <genome_name>@<genome_id> format
 		//extract genome name and genome id to make map
 		//replace leaves with just genome id
-		String delimiter = "@";
+		for(String leaf: leaves) {
+			if(leaf.contains(delimiter)) {
+				String[] parts = leaf.split(delimiter);
+				idOnlyNewick = idOnlyNewick.replaceFirst(leaf, parts[idIndex]);
+				nameToId.put(parts[nameIndex].replaceAll("_", " "), parts[idIndex]);
+			}
+		}
+		
+		JSONObject outgroupJSON = new JSONObject();
+		String[] names = outgroup.toArray(new String[0]);
+		Arrays.sort(names);
+		for(String name: names) {
+			String id = nameToId.get(name);
+			outgroupJSON.put(id,name);
+		}
+		
+		JSONObject infoJSON = new JSONObject();
+		infoJSON.put("outgroups", outgroupJSON);
+	
+		String genomeCount = "" + (leaves.length - outgroupGenomes.length);
+		infoJSON.put("count", genomeCount);
+		
+		infoJSON.put("taxon_name", taxonName);
+		infoJSON.put("taxon_rank", taxonRank);
+
+		JSONObject labelJSON = new JSONObject();
+		names = nameToId.keySet().toArray(new String[0]);
+		Arrays.sort(names);
+		for(String name: names) {
+			String id = nameToId.get(name);
+			labelJSON.put(id,name);
+		}
+
+		JSONObject fullJSON = new JSONObject();
+		fullJSON.put("info", infoJSON);
+		fullJSON.put("labels", labelJSON);
+		fullJSON.put("tree", idOnlyNewick);
+//		System.out.println(idOnlyNewick);
+		r = fullJSON.toJSONString();
+//		System.out.println(r);
 		return r;
 	}
 
