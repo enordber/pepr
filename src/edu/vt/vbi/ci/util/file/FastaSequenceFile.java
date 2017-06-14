@@ -123,8 +123,11 @@ Comparable{
 	
 	/* (non-Javadoc)
 	 * @see util.file.FasaSequenceSet#getTitles()
+	 * This is synchronized because it opens then closes the file, so 
+	 * access by multiple Threads can result in one Thread closing the file 
+	 * while another is still trying to read from the file.
 	 */
-	public String[] getTitles() {
+	public synchronized String[] getTitles() {
 		if(titles == null || !titles[0].startsWith(">")) {
 			titles= new String[sequenceStarts.length];
 			try {
@@ -202,8 +205,11 @@ Comparable{
 
 	/* (non-Javadoc)
 	 * @see util.file.FasaSequenceSet#getSequence(int)
+	 * This is synchronized because it opens then closes the file, so 
+	 * access by multiple Threads can result in one Thread closing the file 
+	 * while another is still trying to read from the file.
 	 */
-	public String[] getSequence(int i) {
+	public synchronized String[] getSequence(int i) {
 		String[] r = null;
 		int firstLine = sequenceStarts[i];
 		int lastLine = -1; //the name lastLine is a bit misleading. this is
