@@ -39,6 +39,7 @@ public class HMMSetEnhancer {
 	private Logger logger = Logger.getLogger(getClass());
 
 	public static void main(String[] args) {
+		PhyloPipeline.setCommandPaths();
 		CommandLineProperties clp = new CommandLineProperties(args);
 		String hgDirName = clp.getValues(HandyConstants.DIRECTORY)[0];
 		String[] genomeFiles = clp.getValues(HandyConstants.GENOME_FILE);
@@ -170,6 +171,13 @@ public class HMMSetEnhancer {
 				logger.info("hmm score sum for genome " + i + " " + 
 						genomeSequenceFiles[i].getTaxa()[0] + ": "
 						+ hmmScoreSums[i]);
+				if(hmmScoreSums[i] < 1) {
+					System.out.println("no hmm scores for genome " + i + ", " + genomeSequenceFiles[i].getTaxa()[0]);
+					System.out.println("\thmmResultHolder[i].length: " + hmmResultHolder[i].length);
+					for(HMMResult result: hmmResultHolder[i]) {
+						System.out.println("\t" + result);
+					}
+				}
 			}
 			//determine which outgroup taxa to keep 
 			boolean[] keepOutgroup = new boolean[outgroupGenomeSequenceFiles.length];
@@ -494,7 +502,7 @@ public class HMMSetEnhancer {
 		private String hmmFileName;
 		private TextFile[] resultHolder;
 		private HMMResult[][] hmmResultHolder; 
-		boolean keepHMMSearchFiles = false;
+		boolean keepHMMSearchFiles = true;
 
 		public HMMSearchRunner(String hmmfileName, TextFile[] resultHolder,
 				HMMResult[][] hmmResultHolder) {
@@ -508,7 +516,7 @@ public class HMMSetEnhancer {
 			while(genomeIndex < genomeSequenceFiles.length) {
 				try {
 					String outfileName = "";
-					File f = File.createTempFile("hmmsearch_", ".out", new File(System.getProperty("user.dir")));
+					File f = File.createTempFile("hmmsearch_" + genomeIndex + "_", ".out", new File(System.getProperty("user.dir")));
 					outfileName = f.getAbsolutePath();
 					String hmmsearchPath = ExecUtilities.getCommandPath("hmmsearch");
 
@@ -540,7 +548,7 @@ public class HMMSetEnhancer {
 		private HMMResult[] getHMMResults(TextFile resultFile) throws IOException {
 			HMMResult[] r = null;
 			String[] resultLines = resultFile.getAllLines();
-
+			System.out.println("HMMSetEnhancer.getHMMResults() resultsFile: " + resultFile.getFile().getName() + " lines: " + resultLines.length);
 			ArrayList<HMMResult> hmmResults = new ArrayList<HMMResult>();
 			for(int i = 0; i < resultLines.length; i++) {
 				HMMResult hmmResult = parseHMMResult(resultLines[i]);
@@ -551,15 +559,19 @@ public class HMMSetEnhancer {
 
 			r = new HMMResult[hmmResults.size()];
 			hmmResults.toArray(r);
-
+			System.out.println("results from " + resultFile.getFile().getName() + ": " + r.length);
 			return r;
 		}
 
 		private HMMResult parseHMMResult(String resultLine) {
 			HMMResult r = null;
-			try {
-				r = new HMMResult(resultLine);
-			} catch(Exception e) {
+			if(resultLine.length() > 1 && !resultLine.startsWith("#")) {
+				try {
+					r = new HMMResult(resultLine);
+				} catch(Exception e) {
+					System.out.println("HMMSetEnhancer.parseHMMResult() problem parsing hmmresult line:\n" + resultLine + " :: message: " + e.getMessage());
+					e.printStackTrace();
+				}
 			}
 			return r;
 		}
