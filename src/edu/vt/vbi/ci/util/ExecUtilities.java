@@ -25,6 +25,11 @@ public class ExecUtilities {
 			logger.info(command);
 			Process proc = Runtime.getRuntime().exec(command);
 			r = getResultFromProcess(proc);
+			logger.info(command + " has rc " + r.getRc() + "\n");
+			for (String s : r.getStderr())
+			{
+			    logger.info("  " + s);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
@@ -51,6 +56,12 @@ public class ExecUtilities {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+
+		if (r.getRc() != 0)
+		{
+		    logger.warn("Error return " + r.getRc() + " from command " + command);
+		}
+
 
 		return r;
 	}
@@ -82,13 +93,14 @@ public class ExecUtilities {
 
 		errorThread.join();
 		outThread.join();
-		r = new CommandResults(outReader.getLinesRead(),
-				errorRead.getLinesRead());
 
 		//call destroy() on process to free resources. The streams
 		//are not closed automatically, and may eventually 
 		//accumulate and result in an "IOException: Too many open files"
-		proc.waitFor();
+		int rc = proc.waitFor();
+		r = new CommandResults(outReader.getLinesRead(),
+				       errorRead.getLinesRead(), rc);
+
 		try {
 			proc.getErrorStream().close();
 			proc.getInputStream().close();
