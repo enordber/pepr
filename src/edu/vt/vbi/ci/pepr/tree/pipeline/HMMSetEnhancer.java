@@ -502,7 +502,7 @@ public class HMMSetEnhancer {
 		private String hmmFileName;
 		private TextFile[] resultHolder;
 		private HMMResult[][] hmmResultHolder; 
-		boolean keepHMMSearchFiles = true;
+		boolean keepHMMSearchFiles = false;
 
 		public HMMSearchRunner(String hmmfileName, TextFile[] resultHolder,
 				HMMResult[][] hmmResultHolder) {
