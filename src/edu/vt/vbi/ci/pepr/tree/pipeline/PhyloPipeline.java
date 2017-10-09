@@ -46,6 +46,7 @@ import edu.vt.vbi.ci.util.file.TextFile;
  */
 public class PhyloPipeline {
 
+	private static final int MINIMUM_GENOME_COUNT = 4;
 
 	private static Logger logger;
 	private static HashMap<String,String> commands;
@@ -254,6 +255,10 @@ public class PhyloPipeline {
 		if(uniqueSpecies) {
 			homologySearchSequenceFiles = 
 					filterOutDuplicateSpecies(homologySearchSequenceFiles);
+			if(homologySearchSequenceFiles.length < MINIMUM_GENOME_COUNT) {
+				System.out.println("There are not enough unique species to use the unique species filter, so all genomes will be used.");
+				homologySearchSequenceFiles = inputSequenceFiles;
+			}
 			Arrays.sort(homologySearchSequenceFiles);
 		} else if(uniqueGenus) {
 			homologySearchSequenceFiles = 
