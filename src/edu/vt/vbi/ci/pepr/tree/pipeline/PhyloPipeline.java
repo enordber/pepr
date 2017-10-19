@@ -756,7 +756,7 @@ public class PhyloPipeline {
 		logger.info("bin directory: " + binDirName);
 
 		String[] commands = new String[]{
-				"muscle",
+				"muscle-3.6",
 				"Gblocks",
 				"blastall",
 				"blat",
@@ -774,11 +774,13 @@ public class PhyloPipeline {
 				"hmmsearch"
 		};
 
+/*
 		for(int i = 0; i < commands.length; i++) {
 			String fullCommandPath = binDirName + commands[i];
 			logger.info("set path for '" + commands[i] + "' to '" + fullCommandPath + "'" );
 			System.setProperty(commands[i], fullCommandPath);
 		}
+		*/
 	}
 
 	private TextFile runMCL(TextFile hitPairFile, String inflation, int threads) {
@@ -1145,7 +1147,7 @@ public class PhyloPipeline {
 				"hmmbuild",
 				"hmmsearch",
 				"mcl",
-				"muscle",
+				"muscle-3.6",
 				"raxmlHPC",
 				"raxmlHPC-PTHREADS"
 		};

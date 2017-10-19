@@ -293,7 +293,7 @@ public class MultipleSequenceAligner {
 	}
 
 	private void determineMusclePath() {
-		muscleHostMusclePath = ExecUtilities.getCommandPath("muscle");
+		muscleHostMusclePath = ExecUtilities.getCommandPath("muscle-3.6");
 	}
 
 	public void addMuscleOption(String opt) {

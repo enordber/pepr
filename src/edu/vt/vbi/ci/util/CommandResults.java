@@ -14,11 +14,14 @@ public class CommandResults {
 
 	private String[] stdout;
 	private String[] stderr;
+    private int rc;
 	
-	public CommandResults(String[] stdout, String[] stderr) {
+    public CommandResults(String[] stdout, String[] stderr, int rc) {
 		this.stdout = stdout;
 		this.stderr = stderr;
+		this.rc = rc;
 	}
+    public int getRc() { return rc; }
 	
 	public String[] getStdout() {
 		return stdout;
