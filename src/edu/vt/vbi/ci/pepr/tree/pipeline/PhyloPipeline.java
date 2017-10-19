@@ -530,6 +530,7 @@ public class PhyloPipeline {
 		String idOnlyNewick = newickTree;
 		BasicTree tree = new BasicTree(newickTree);
 		String[] leaves = tree.getLeaves();
+		ArrayList<String> idList = new ArrayList<String>(leaves.length);
 		HashMap<String,String> nameToId = new HashMap<String,String>();
 		HashSet<String> outgroup = new HashSet<String>();
 		for(String og: outgroupGenomes) {
@@ -537,15 +538,20 @@ public class PhyloPipeline {
 			outgroup.add(parts[nameIndex].replaceAll("_", " "));
 		}
 		
+		JSONObject labelJSON = new JSONObject();
 		//verify that leaves are in <genome_name>@<genome_id> format
 		//extract genome name and genome id to make map
 		//replace leaves with just genome id
 		for(String leaf: leaves) {
 			if(leaf.contains(delimiter)) {
 				String[] parts = leaf.split(delimiter);
+				String name = parts[nameIndex].replaceAll("_", " "); 
+				String id = parts[idIndex];
 				idOnlyNewick = idOnlyNewick.replaceFirst(leaf, parts[idIndex]);
-				nameToId.put(parts[nameIndex].replaceAll("_", " "), parts[idIndex]);
-			}
+				nameToId.put(name, id);
+				labelJSON.put(id,name);
+				idList.add(id);
+		}
 		}
 		
 		JSONObject outgroupJSON = new JSONObject();
@@ -564,14 +570,7 @@ public class PhyloPipeline {
 		
 		infoJSON.put("taxon_name", taxonName);
 		infoJSON.put("taxon_rank", taxonRank);
-
-		JSONObject labelJSON = new JSONObject();
-		names = nameToId.keySet().toArray(new String[0]);
-		Arrays.sort(names);
-		for(String name: names) {
-			String id = nameToId.get(name);
-			labelJSON.put(id,name);
-		}
+		infoJSON.put("ids", idList);
 
 		JSONObject fullJSON = new JSONObject();
 		fullJSON.put("info", infoJSON);
