@@ -118,7 +118,22 @@ public class PhyloPipeline {
 								clp.getValues("?", 
 										HandyConstants.FALSE)[0].equals(HandyConstants.TRUE);
 
-		setCommandPaths();
+
+		boolean useInstalledThirdPartyBinaries = true;
+		if(clp.getValues(HandyConstants.PATRIC, HandyConstants.FALSE)[0].equals(HandyConstants.TRUE)) {
+			FastaUtilities.setStripPipeAndSuffix(false);
+			writeJSON = true;
+			useInstalledThirdPartyBinaries = false;
+		}
+
+		useInstalledThirdPartyBinaries = clp.getValues(HandyConstants.USE_INSTALLED_THIRD_PARTY_BINARIES, ""+useInstalledThirdPartyBinaries)[0].equalsIgnoreCase(HandyConstants.TRUE);
+		
+		if(useInstalledThirdPartyBinaries) {
+			System.out.println("using pre-installed binaries for third-party tools");
+			setCommandPaths();
+		} else {
+			System.out.println("using system binaries for third-party tools");
+		}
 
 		//check for required programs
 		checkForRequiredPrograms();
@@ -172,11 +187,6 @@ public class PhyloPipeline {
 		} catch (IOException e) {
 			e.printStackTrace();
 			logger.log(Level.DEBUG,e.getMessage());
-		}
-
-		if(clp.getValues(HandyConstants.PATRIC, HandyConstants.FALSE)[0].equals(HandyConstants.TRUE)) {
-			FastaUtilities.setStripPipeAndSuffix(false);
-			writeJSON = true;
 		}
 
 		//Determine number of Threads to use. By default, every thread parameter
@@ -533,7 +543,7 @@ public class PhyloPipeline {
 		tree.setOutGroup(getSelectedOutgroupGenomes());
 		String rootedNewickTree = tree.getTreeString(true, true);
 		String jsonTree = newickToPATRICJSON(rootedNewickTree, getSelectedOutgroupGenomes(), "unknown", "unknown");
-		String jsonFileName = runName + "_final_tree_md.json";
+		String jsonFileName = runName + ".json";
 		logger.info("writing json output to file " + jsonFileName);
 		FileWriter fw = new FileWriter(jsonFileName);
 		fw.write(jsonTree);
@@ -1178,7 +1188,6 @@ public class PhyloPipeline {
 				"hmmbuild",
 				"hmmsearch",
 				"mcl",
-				"muscle",
 				"muscle-3.6",
 				"raxmlHPC",
 				"raxmlHPC-PTHREADS"

@@ -25,7 +25,11 @@ public class ExecUtilities {
 			logger.info(command);
 			Process proc = Runtime.getRuntime().exec(command);
 			r = getResultFromProcess(proc);
-			logger.info(command + " - return code: " + r.getRc());
+			logger.info(command + " has rc " + r.getRc() + "\n");
+			for (String s : r.getStderr())
+			{
+			    logger.info("  " + s);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {

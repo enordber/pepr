@@ -97,4 +97,5 @@ public interface HandyConstants {
 	public static final String BLASTN = "blastn";
 	public static final String AVAILABLE_RAM = "available_ram";
 	public static final String PATRIC = "patric";
+	public static final String USE_INSTALLED_THIRD_PARTY_BINARIES = "use_installed_third_party_binaries";
 }
