@@ -127,12 +127,20 @@ public class PhyloPipeline {
 		}
 
 		useInstalledThirdPartyBinaries = clp.getValues(HandyConstants.USE_INSTALLED_THIRD_PARTY_BINARIES, ""+useInstalledThirdPartyBinaries)[0].equalsIgnoreCase(HandyConstants.TRUE);
-		
+
 		if(useInstalledThirdPartyBinaries) {
 			System.out.println("using pre-installed binaries for third-party tools");
 			setCommandPaths();
 		} else {
 			System.out.println("using system binaries for third-party tools");
+			//check for specific version of muscle, and use if it is present
+			String muscleVersion = "muscle-3.6";
+			String fullCommandPath = ExecUtilities.getCommandPath(muscleVersion);
+			if(fullCommandPath != null && fullCommandPath.length() > 0) {
+				logger.info("set path for '" + muscleVersion + "' to '" + fullCommandPath + "'" );
+				System.setProperty("muscle", fullCommandPath);
+			}
+
 		}
 
 		//check for required programs
@@ -820,8 +828,18 @@ public class PhyloPipeline {
 		for(int i = 0; i < commands.length; i++) {
 			String fullCommandPath = binDirName + commands[i];
 			logger.info("set path for '" + commands[i] + "' to '" + fullCommandPath + "'" );
+			System.out.println("set path for '" + commands[i] + "' to '" + fullCommandPath + "'" );
 			System.setProperty(commands[i], fullCommandPath);
 		}
+
+		//check for specific version of muscle, and use if it is present
+		String muscleVersion = "muscle-3.6";
+		String fullCommandPath = ExecUtilities.getCommandPath(muscleVersion);
+		if(fullCommandPath != null && fullCommandPath.length() > 0) {
+			logger.info("set path for '" + muscleVersion + "' to '" + fullCommandPath + "'" );
+			System.setProperty("muscle", fullCommandPath);
+		}
+
 	}
 
 	private TextFile runMCL(TextFile hitPairFile, String inflation, int threads) {
@@ -1188,6 +1206,7 @@ public class PhyloPipeline {
 				"hmmbuild",
 				"hmmsearch",
 				"mcl",
+				"muscle",
 				"muscle-3.6",
 				"raxmlHPC",
 				"raxmlHPC-PTHREADS"

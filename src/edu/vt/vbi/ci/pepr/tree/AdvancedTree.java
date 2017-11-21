@@ -1536,7 +1536,7 @@ public class AdvancedTree {
 		int[] branchSupports = getBranchSupports();
 
 		if(distanceFromRoot != phylogramNodeX[node]) {
-			System.out.println("freak out: " + distanceFromRoot + " != " + phylogramNodeX[node]);
+			System.out.println("AdvancedTree.getNodeJSON(): " + distanceFromRoot + " != " + phylogramNodeX[node]);
 		}
 		float[][] nodeY = getNodeCoordinates();
 		String[] tipLabels = currentTree.getLeaves();
@@ -1580,7 +1580,7 @@ public class AdvancedTree {
 			//this is a leaf node
 			sb.append("'");
 			tipLabels[node] = tipLabels[node].replaceAll("'", "");
-			tipLabels[node] = tipLabels[node].replaceAll("_", " ");
+//			tipLabels[node] = tipLabels[node].replaceAll("_", " ");
 			sb.append(tipLabels[node]);
 //			sb.append(node);
 			sb.append("'");

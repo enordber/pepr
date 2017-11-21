@@ -26,9 +26,11 @@ public class ExecUtilities {
 			Process proc = Runtime.getRuntime().exec(command);
 			r = getResultFromProcess(proc);
 			logger.info(command + " has rc " + r.getRc() + "\n");
-			for (String s : r.getStderr())
-			{
-			    logger.info("  " + s);
+			if(r.getRc() != 0) {
+				for (String s : r.getStderr())
+				{
+					logger.error("  " + s);
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -59,7 +61,7 @@ public class ExecUtilities {
 
 		if (r.getRc() != 0)
 		{
-		    logger.warn("Error return " + r.getRc() + " from command " + command);
+			logger.warn("Error return " + r.getRc() + " from command " + command);
 		}
 
 
@@ -99,7 +101,7 @@ public class ExecUtilities {
 		//accumulate and result in an "IOException: Too many open files"
 		int rc = proc.waitFor();
 		r = new CommandResults(outReader.getLinesRead(),
-				       errorRead.getLinesRead(), rc);
+				errorRead.getLinesRead(), rc);
 
 		try {
 			proc.getErrorStream().close();
