@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import edu.vt.vbi.ci.pepr.tree.pipeline.PhyloPipeline;
 import edu.vt.vbi.ci.util.CommandLineProperties;
 import edu.vt.vbi.ci.util.HandyConstants;
+import edu.vt.vbi.ci.util.PEPRTracker;
 import edu.vt.vbi.ci.util.file.FastaSequenceFile;
 import edu.vt.vbi.ci.util.file.TextFile;
 
@@ -85,7 +86,6 @@ public class PhylogeneticTreeRefiner {
 		logger.info("initialTree string: " + initialTree.trim());
 
 		setMostRefinedTreeString(initialTree);
-		
 		int requiredSpeciesForUniqueSpeciesFilter = 5;
 		
 		//create taxonToFileName map
@@ -221,7 +221,9 @@ public class PhylogeneticTreeRefiner {
 							"-" + HandyConstants.RUN_NAME,
 							runName + "_refine_sub" + refiningRound,
 							"-" + HandyConstants.REFINE,
-							HandyConstants.FALSE
+							HandyConstants.FALSE,
+							"-" + HandyConstants.SUBTREE,
+							HandyConstants.TRUE
 					}
 			);
 
@@ -229,7 +231,9 @@ public class PhylogeneticTreeRefiner {
 			String refinedTreeString = pipeline.getTree();
 			AdvancedTree refinedSubTree = new AdvancedTree(refinedTreeString);
 			refinedSubTree.setOutGroup(refineOutgroupList);
-
+			String rootedSubtreeString = refinedSubTree.getTreeString(true, true);
+			PEPRTracker.setTree(rootedSubtreeString);
+			
 			logger.info("refined subtree: " + refinedTreeString);
 
 			//replace subtree in the full tree
@@ -241,9 +245,11 @@ public class PhylogeneticTreeRefiner {
 
 			refiningTree = refiningTree.replaceNode(refinedSubTree.getBasicTree());
 			refiningTree.unroot();
+			refiningTree.setOutGroup(outgroupList);
 
 			String refinedFullTreeString = refiningTree.getTreeString(true, true);
 			setMostRefinedTreeString(refinedFullTreeString);
+			PEPRTracker.setFullTree(refinedFullTreeString);
 			
 			logger.info("refiningTree with node " + nextRefineIndex + 
 					" refined: ");
@@ -366,6 +372,7 @@ public class PhylogeneticTreeRefiner {
 
 	private void setMostRefinedTreeString(String mostRefinedTreeString) {
 		this.mostRefinedTreeString = mostRefinedTreeString;
+		PEPRTracker.setFullTree(mostRefinedTreeString);
 	}
 
 }

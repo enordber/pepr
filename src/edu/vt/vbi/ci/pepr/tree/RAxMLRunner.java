@@ -14,6 +14,7 @@ import edu.vt.vbi.ci.pepr.alignment.SequenceAlignmentParser;
 import edu.vt.vbi.ci.util.CommandResults;
 import edu.vt.vbi.ci.util.ExecUtilities;
 import edu.vt.vbi.ci.util.HandyConstants;
+import edu.vt.vbi.ci.util.PEPRTracker;
 import edu.vt.vbi.ci.util.file.TextFile;
 
 /**
@@ -91,7 +92,7 @@ public class RAxMLRunner {
 			if(getThreadCount() > 1) {
 				raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 			}
-			String raxmlCommand = "";
+			String raxmlOptions = "";
 
 			//determine the file name for the alignment file
 			File workingDir = new File(System.getProperty("user.dir"));
@@ -121,22 +122,27 @@ public class RAxMLRunner {
 				if(bootstrapReps == 0 || algorithm == PER_SITE_LL_ALGORITHM) {
 					bootstrapOption = "";
 				}
-				raxmlCommand = raxmlPath + algorithmOption + 
+				raxmlOptions = algorithmOption + 
 				" -m " + 
 				getMatrix() + 
 				" -s " 
 				+ infileName + " -n " + runName + bootstrapOption;
 				if(getThreadCount() > 1) {
-					raxmlCommand = raxmlCommand + " -T " + getThreadCount();
+					raxmlOptions = raxmlOptions + " -T " + getThreadCount();
 				}
 
 				if(algorithm == PARSIMONY_ALGORITHM) {
 					if(getBootstrapReps() > 0) {
-						raxmlCommand = raxmlCommand + " -Y -N " + getBootstrapReps();
+						raxmlOptions = raxmlOptions + " -Y -N " + getBootstrapReps();
 					} else {
-						raxmlCommand = raxmlCommand + " -y ";
+						raxmlOptions = raxmlOptions + " -y ";
 					}
 				}
+				
+				String raxmlCommand = "";
+				raxmlCommand = raxmlPath + raxmlOptions;
+				String executableNameOnly = new File(raxmlPath).getName();
+				PEPRTracker.setTreeOptions(executableNameOnly + " " + raxmlOptions);
 				//run raxml, and wait for it to finish
 				CommandResults results = ExecUtilities.exec(raxmlCommand);
 			} catch (IOException ioe) {
@@ -163,7 +169,7 @@ public class RAxMLRunner {
 		if(getThreadCount() > 1) {
 			raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 		}
-		String raxmlCommand = "";
+		String raxmlOptions = "";
 
 		//determine the file name for the alignment file
 		File workingDir = new File(System.getProperty("user.dir"));
@@ -189,14 +195,15 @@ public class RAxMLRunner {
 			//configure raxml command string
 			String algorithmOption = " -f g ";
 
-			raxmlCommand = raxmlPath + algorithmOption + 
+			raxmlOptions = algorithmOption + 
 			" -m " + getMatrix() + " -s " 
 			+ infileName + " -n " + runName + " -z " + treeFileName;
 			if(getThreadCount() > 1) {
-				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
+				raxmlOptions = raxmlOptions + " -T " + getThreadCount();
 			}
 			perSiteLLResultFileName = 
 				"RAxML_perSiteLLs." + runName;
+			String raxmlCommand = raxmlPath + raxmlOptions;
 			System.out.println("ML branch length raxml command: " + raxmlCommand);
 			CommandResults secondResults = ExecUtilities.exec(raxmlCommand);
 
@@ -214,7 +221,7 @@ public class RAxMLRunner {
 		if(getThreadCount() > 1) {
 			raxmlPath = ExecUtilities.getCommandPath("raxmlHPC-PTHREADS");
 		}
-		String raxmlCommand = "";
+		String raxmlOptions = "";
 
 		//determine the file name for the alignment file
 		File workingDir = new File(System.getProperty("user.dir"));
@@ -233,13 +240,14 @@ public class RAxMLRunner {
 			//configure raxml command string
 			String algorithmOption = " -f d ";
 
-			raxmlCommand = raxmlPath + algorithmOption + 
+			raxmlOptions = algorithmOption + 
 			" -m PROTGAMMAWAGF -s " 
 			+ infileName + " -n " + runName + " -Y";
 			if(getThreadCount() > 1) {
-				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
+				raxmlOptions = raxmlOptions + " -T " + getThreadCount();
 			}
 			//run raxml, and wait for it to finish
+			String raxmlCommand = raxmlPath + raxmlOptions;
 			CommandResults firstResults = ExecUtilities.exec(raxmlCommand);
 
 			//do a second raxml run to determine the ML branch lengths 
@@ -251,12 +259,16 @@ public class RAxMLRunner {
 			//for a given start tree
 			algorithmOption = " -f e";
 
-			raxmlCommand = raxmlPath + algorithmOption + 
+			raxmlOptions = algorithmOption + 
 			" -m " + matrix + " -s " 
 			+ infileName + " -n " + runName + "BL" + " -t " + parsimonyTreeFileName;
 			if(getThreadCount() > 1) {
 				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
 			}
+			
+			raxmlCommand = raxmlPath + raxmlOptions;
+			String executableNameOnly = new File(raxmlPath).getName();
+			PEPRTracker.setTreeOptions(executableNameOnly + " " + raxmlOptions);
 			CommandResults secondResults = ExecUtilities.exec(raxmlCommand);
 			if(deleteGeneratedFiles()) {
 				new File(parsimonyTreeFileName).deleteOnExit();

@@ -101,6 +101,7 @@ public class PhyloPipeline {
 		runName = "pepr-" + System.currentTimeMillis();
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
 		PEPRTracker.newTree(runName);
+		
 
 		String logfile = clp.getValues("logfile", runName+".log")[0];
 		//set log file name, based on run name, if it has not already been set
@@ -119,16 +120,16 @@ public class PhyloPipeline {
 										HandyConstants.FALSE)[0].equals(HandyConstants.TRUE);
 
 
-		boolean useInstalledThirdPartyBinaries = true;
+		boolean useBundledThirdPartyBinaries = true;
 		if(clp.getValues(HandyConstants.PATRIC, HandyConstants.FALSE)[0].equals(HandyConstants.TRUE)) {
 			FastaUtilities.setStripPipeAndSuffix(false);
 			writeJSON = true;
-			useInstalledThirdPartyBinaries = false;
+			useBundledThirdPartyBinaries = false;
 		}
 
-		useInstalledThirdPartyBinaries = clp.getValues(HandyConstants.USE_INSTALLED_THIRD_PARTY_BINARIES, ""+useInstalledThirdPartyBinaries)[0].equalsIgnoreCase(HandyConstants.TRUE);
+		useBundledThirdPartyBinaries = clp.getValues(HandyConstants.USE_BUNDLED_THIRD_PARTY_BINARIES, ""+useBundledThirdPartyBinaries)[0].equalsIgnoreCase(HandyConstants.TRUE);
 
-		if(useInstalledThirdPartyBinaries) {
+		if(useBundledThirdPartyBinaries) {
 			System.out.println("using pre-installed binaries for third-party tools");
 			setCommandPaths();
 		} else {
@@ -167,8 +168,6 @@ public class PhyloPipeline {
 						CommandLineProperties.loadFromFile(confFileName);
 				clp.addArgs(confCLP);
 			} catch (IOException e) {
-				logger.log(Level.DEBUG, "problem loading configuration file: " + 
-						confFileName);
 				logger.log(Level.DEBUG, "Problem trying to load configuration file: " +
 						confFileName);
 				logger.log(Level.DEBUG,e.getMessage());
@@ -481,7 +480,7 @@ public class PhyloPipeline {
 		long elapsedMinutes = elapsedSeconds /60;
 		long remainderSeconds = elapsedSeconds%60;
 		logger.info("Elapsed time for homolog group creation: " 
-				+ elapsedMinutes + "m " + elapsedSeconds + "s");
+				+ elapsedMinutes + "m " + remainderSeconds + "s");
 
 		//add properties that aren't coming in directly from the 
 		String[] phylogenomicPipelineOptions = new String[]{
@@ -509,6 +508,13 @@ public class PhyloPipeline {
 
 		String firstRoundTree = pgp.getFinalTree();
 		setTree(firstRoundTree);
+		
+		//root firstRoundTree and set it to PEPRTracker
+		AdvancedTree forRooting = new AdvancedTree(firstRoundTree);
+		forRooting.setOutGroup(getSelectedOutgroupGenomes());
+		firstRoundTree = forRooting.getTreeString(true, true);
+		PEPRTracker.setTree(firstRoundTree);
+		PEPRTracker.setFullTree(firstRoundTree);
 
 		//do tree refinement if appropriate
 		boolean refine = 
@@ -519,28 +525,39 @@ public class PhyloPipeline {
 			refineTree(firstRoundTree, clp, inputSequenceFiles, outgroupSequenceFiles);
 		}
 
-		PEPRTracker.setTree(getTree());
-
-		try {
-			printTreeAndOutgroupFile();
-		} catch (IOException e2) {
-			System.out.println("There was a problem writing the tree and outgroup (*.tog) output file: ");
-			e2.printStackTrace();
-		}
-
-		try {
-			printRootedFinalTree();
-		} catch (IOException e1) {
-			System.out.println("There was a problem writing the final rooted tree output files: ");
-			e1.printStackTrace();
-		}
-
-		if(writeJSON) {
+		boolean isSubtree = clp.getValues(HandyConstants.SUBTREE, 
+				HandyConstants.FALSE)[0].equalsIgnoreCase(HandyConstants.TRUE);
+		if(!isSubtree) {
+			String reportFileName = runName + ".report.xml";
 			try {
-				printJSONTreeAndMetadata();
-			} catch (IOException e) {
-				System.out.println("There was a problem writing the PATRIC json output file: ");
-				e.printStackTrace();
+				FileWriter fw = new FileWriter(reportFileName);
+				fw.write(PEPRTracker.getReport());
+				fw.close();
+			} catch (IOException e3) {
+				e3.printStackTrace();
+			}
+
+			try {
+				printTreeAndOutgroupFile();
+			} catch (IOException e2) {
+				System.out.println("There was a problem writing the tree and outgroup (*.tog) output file: ");
+				e2.printStackTrace();
+			}
+
+			try {
+				printRootedFinalTree();
+			} catch (IOException e1) {
+				System.out.println("There was a problem writing the final rooted tree output files: ");
+				e1.printStackTrace();
+			}
+
+			if(writeJSON) {
+				try {
+					printJSONTreeAndMetadata();
+				} catch (IOException e) {
+					System.out.println("There was a problem writing the PATRIC json output file: ");
+					e.printStackTrace();
+				}
 			}
 		}
 	}
@@ -566,6 +583,9 @@ public class PhyloPipeline {
 		tree.setOutGroup(getSelectedOutgroupGenomes());
 		String rootedNewickTree = tree.getTreeString(true, true);
 		String rootedNewickFileName = runName + "_final_rooted.nwk";
+
+		logger.info("writing rooted tree to file '" + rootedNewickFileName + "':");
+		logger.info(rootedNewickTree);
 
 		FileWriter fw = new FileWriter(rootedNewickFileName);
 		fw.write(rootedNewickTree);
@@ -656,6 +676,7 @@ public class PhyloPipeline {
 
 	private void setTree(String tree) {
 		this.tree = tree;
+		PEPRTracker.setFullTree(tree);
 	}
 
 	public String getTree() {
@@ -1200,7 +1221,7 @@ public class PhyloPipeline {
 				"blastall",
 				//				"blat",
 				"formatdb",
-				"FastTree",
+				//				"FastTree",
 				"FastTree_WAG",
 				"Gblocks",
 				"hmmbuild",

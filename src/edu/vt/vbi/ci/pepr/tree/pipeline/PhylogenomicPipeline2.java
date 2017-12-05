@@ -371,6 +371,8 @@ public class PhylogenomicPipeline2 {
 			finalTree = buildConcatenatedNeighborJoiningTree(inputSequenceSetProvider);
 		}
 
+		PEPRTracker.setFullTreeMethod(concatenatedTreeMethod);
+		PEPRTracker.setSupportTreeMethod(supportTreeMethod);
 		if(concatenated && geneWiseJackknife) {
 			if(verboseLevel > 0) {
 				System.out.println("do concatenated and gene-wise jackknife");
@@ -1049,7 +1051,7 @@ public class PhylogenomicPipeline2 {
 		//Have at least two threads wait for the full tree thread to finish.
 		//This is to avoid using too much RAM, since the full tree will require
 		//roughly twice as much RAM as each support tree
-		int threadsToWait = 2;
+		int threadsToWait = Math.max(2, fullTreeThreads);
 
 		//threadsToWait might need to be increased for RAxML 
 		//why is it * 80 * 8 instead of * 640? - because it's from raxml documentation:

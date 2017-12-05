@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import edu.vt.vbi.ci.pepr.alignment.SequenceAlignment;
 import edu.vt.vbi.ci.util.CommandResults;
 import edu.vt.vbi.ci.util.ExecUtilities;
+import edu.vt.vbi.ci.util.PEPRTracker;
 import edu.vt.vbi.ci.util.file.TextFile;
 
 /**
@@ -62,23 +63,27 @@ public class FastTreeRunner implements Runnable{
 			}
 			//create FastTree command
 			String alignmentFileName = alignmentFile.getName();
-			String fastTreeCommand = fastTreePath + " -gamma -nosupport ";
+			String fastTreeOptions = " -gamma -nosupport ";
 			
 			if(nucleotide) {
-				fastTreeCommand = fastTreePath + " -gtr -nt -nosupport ";
+				fastTreeOptions = " -gtr -nt -nosupport ";
 			}
 
 			if(useConstraints) {
-				fastTreeCommand = 
-					fastTreeCommand + "-constraints " + 
+				fastTreeOptions = 
+						fastTreeOptions + "-constraints " + 
 					constraintsFileName + " ";
 			}
 			
+			String fastTreeCommand = fastTreePath + fastTreeOptions;
 			fastTreeCommand = fastTreeCommand + alignmentFileName;
 
 			//execute the command and capture the output. The newick format tree
 			//is written to stdout.
 			System.out.println("FastTreeRunner.run() build tree with command: " + fastTreeCommand);
+			String executableNameOnly = new File(fastTreePath).getName();
+			PEPRTracker.setTreeOptions(executableNameOnly + " " + fastTreeOptions);
+
 			CommandResults results = ExecUtilities.exec(fastTreeCommand);
 			if(results.getStdout().length > 0) {
 				String treeString = results.getStdout()[0];

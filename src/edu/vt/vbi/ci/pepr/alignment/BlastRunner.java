@@ -565,6 +565,7 @@ public class BlastRunner {
 
 					File forOutfileName = File.createTempFile("blast", ".out");
 					String outputName = forOutfileName.getName();
+					forOutfileName.delete();
 
 					String dbName = sequenceSets[index].getFullName();
 					if(usePreformattedDB) {
