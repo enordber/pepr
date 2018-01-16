@@ -190,6 +190,9 @@ public class PhylogenomicPipeline2 {
 		//how many genes should be filtered in the congruence filtering step
 		double percentileToRemove = 
 				Double.parseDouble(commandLineProperties.getValues(HandyConstants.TRIM_PERCENT, "0.1")[0]);
+		if(percentileToRemove >= 1.0) {
+			percentileToRemove /= 100;
+		}
 
 		SequenceSetProvider inputSequenceSetProvider = 
 				createInputSequenceSetProvider(sequenceFileNames, minTaxa, maxTaxa, targetTaxa, targetMinGeneCount, repOnly);
@@ -369,49 +372,49 @@ public class PhylogenomicPipeline2 {
 
 		if(nj) {
 			finalTree = buildConcatenatedNeighborJoiningTree(inputSequenceSetProvider);
-		}
+		} else {
 
-		PEPRTracker.setFullTreeMethod(concatenatedTreeMethod);
-		PEPRTracker.setSupportTreeMethod(supportTreeMethod);
-		if(concatenated && geneWiseJackknife) {
-			if(verboseLevel > 0) {
-				System.out.println("do concatenated and gene-wise jackknife");
-			}
-			finalTree = buildConcatenatedTreeWithGeneWiseJackKnifeSupport(
-					inputSequenceSetProvider, concatenatedTreeMethod, 
-					fullTreeThreads, bootstrapReps,
-					supportTreeMethod, treeThreads, mlMatrix);
-		} else if(concatenated && single) {
-			if(verboseLevel > 0) {
-				System.out.println("do concatenated and single");
-			}
-			buildConcatenatedAndSingleTrees(inputSequenceSetProvider, 
-					concatenatedTreeMethod, 
-					fullTreeThreads, 
-					singleTreeMethod, treeThreads);
-		} else if(concatenated) {
-			if(verboseLevel > 0) {
-				System.out.println("do concatenated");
-			}
-			ConcatenatedSequenceAlignment concatenatedAlignment = 
-					getConcatenatedAlignment(inputSequenceSetProvider);
-			finalTree = buildConcatenatedTree(concatenatedAlignment, fullTreeThreads, 
-					bootstrapReps, concatenatedTreeMethod, mlMatrix);
-		} else if(geneWiseJackknife){
-			if(verboseLevel > 0) {
-				System.out.println("do gene-wise jacknife");
-			}
-			buildGeneWiseJackknifeTrees(
-					inputSequenceSetProvider,
-					bootstrapReps, 
-					supportTreeMethod, treeThreads,
-					outputFileName, mlMatrix);
-		} else if(single) {
-			if(verboseLevel > 0) {
-				System.out.println("do single");
+			PEPRTracker.setFullTreeMethod(concatenatedTreeMethod);
+			PEPRTracker.setSupportTreeMethod(supportTreeMethod);
+			if(concatenated && geneWiseJackknife) {
+				if(verboseLevel > 0) {
+					System.out.println("do concatenated and gene-wise jackknife");
+				}
+				finalTree = buildConcatenatedTreeWithGeneWiseJackKnifeSupport(
+						inputSequenceSetProvider, concatenatedTreeMethod, 
+						fullTreeThreads, bootstrapReps,
+						supportTreeMethod, treeThreads, mlMatrix);
+			} else if(concatenated && single) {
+				if(verboseLevel > 0) {
+					System.out.println("do concatenated and single");
+				}
+				buildConcatenatedAndSingleTrees(inputSequenceSetProvider, 
+						concatenatedTreeMethod, 
+						fullTreeThreads, 
+						singleTreeMethod, treeThreads);
+			} else if(concatenated) {
+				if(verboseLevel > 0) {
+					System.out.println("do concatenated");
+				}
+				ConcatenatedSequenceAlignment concatenatedAlignment = 
+						getConcatenatedAlignment(inputSequenceSetProvider);
+				finalTree = buildConcatenatedTree(concatenatedAlignment, fullTreeThreads, 
+						bootstrapReps, concatenatedTreeMethod, mlMatrix);
+			} else if(geneWiseJackknife){
+				if(verboseLevel > 0) {
+					System.out.println("do gene-wise jacknife");
+				}
+				buildGeneWiseJackknifeTrees(
+						inputSequenceSetProvider,
+						bootstrapReps, 
+						supportTreeMethod, treeThreads,
+						outputFileName, mlMatrix);
+			} else if(single) {
+				if(verboseLevel > 0) {
+					System.out.println("do single");
+				}
 			}
 		}
-
 		setFinalTree(finalTree);
 	}
 
@@ -434,13 +437,13 @@ public class PhylogenomicPipeline2 {
 		int topN = cat.getNTax() * 4;
 		BipartitionSet fullBipartSet = 
 				new BipartitionSet(cat.getBipartitionsForColumns(10000), topN);
-//				new BipartitionSet(cat.getBipartitionsForColumns(10000));
+		//				new BipartitionSet(cat.getBipartitionsForColumns(10000));
 		fullBipartSet.setTaxa(cat.getTaxa());
-//		fullBipartSet = new BipartitionSet(fullBipartSet.getNonTrivialBipartitions(), topN);
-//		fullBipartSet.setTaxa(cat.getTaxa());
+		//		fullBipartSet = new BipartitionSet(fullBipartSet.getNonTrivialBipartitions(), topN);
+		//		fullBipartSet.setTaxa(cat.getTaxa());
 		System.out.println("PhylogenomicPipeline2.filterForCongruence() topN (" + topN + ") bipartitions:");
 		fullBipartSet.printBipartitionsAndCounts();
-//		fullBipartSet.printNonTrivialBipartitionsAndCounts();
+		//		fullBipartSet.printNonTrivialBipartitionsAndCounts();
 
 		SequenceAlignment[] alignments = cat.getAlignments();
 		Bipartition[][] alignmentBiparts = 
@@ -479,18 +482,19 @@ public class PhylogenomicPipeline2 {
 		//		StatisticsUtilities.printDistribution(alignmentMeanCosts);
 
 		System.out.println("bipart costs: " + meanOfMeans + " +/- " + sdOfMeans);
-		//		int percentileIndex = (int) (sortMeans.length - (sortMeans.length*percentileToRemove));
-		//		double maxCost = sortMeans[percentileIndex];
-		double maxCost = meanOfMeans + (sdOfMeans*2);
-//		maxCost = meanOfMeans + sdOfMeans;
-//		maxCost = meanOfMeans;
+		int percentileIndex = (int) (sortMeans.length - (sortMeans.length*percentileToRemove));
+		System.out.println("percentileIndex: " + percentileIndex + " of " + sortMeans.length);
+		double maxCost = sortMeans[percentileIndex];
+		//		maxCost = meanOfMeans + (sdOfMeans*0.5);
+		//		maxCost = meanOfMeans + sdOfMeans;
+		//		maxCost = meanOfMeans;
 		System.out.println("remove any alignments with meanCost > " +
 				maxCost);
 
 		//get the alignments being kept 
 		ArrayList keepSequencesList = new ArrayList(alignmentMeanCosts.length);
 		for(int i = 0;i < alignmentMeanCosts.length; i++) {
-			if(alignmentMeanCosts[i] <= maxCost) {
+			if(i <= percentileIndex && alignmentMeanCosts[i] <= maxCost) {
 				keepSequencesList.add(sequenceSets[i]);
 			} else {
 				System.out.println("discarding set " + sequenceSets[i].getName() 
@@ -630,7 +634,7 @@ public class PhylogenomicPipeline2 {
 		commands.put(HandyConstants.CONCATENATED, 
 				"Build a single tree from the concatenation of all alignments");
 		commands.put(HandyConstants.SUPPORT_REPS, 
-				"Number of bootstrap replicates to perform");
+				"Number of suppport tree replicates to perform");
 		commands.put(HandyConstants.HELP, 
 				"\tPrint this help.");
 		commands.put(HandyConstants.DIRECTORY, 
@@ -649,9 +653,9 @@ public class PhylogenomicPipeline2 {
 				"\tThe ideal minimum number of genes (sequence sets) to be used. The value for " + HandyConstants.MIN_TAXA + " takes precedence over this.");
 		commands.put(HandyConstants.FULL_TREE_THREADS, 
 				"the number of threads to use for building the concatenated tree. This comes out of the treeThreads amount, and is not in addition to it. By default, the full treeThreads amount is used, but a smaller number can be given which is especially useful for machines that don't support pthreads");
-		commands.put(HandyConstants.SINGLE, "\tBuild a tree for each input sequence set meeting the membership criteria.");
-		commands.put(HandyConstants.SINGLE_TREE_METHOD, "Method used to build single-gene trees.");
-		commands.put(HandyConstants.MATRIX_EVALUATION, "\tPerform matrix evaluation to determine which amino acid substitution matrix performs best for this dataset.");
+		//		commands.put(HandyConstants.SINGLE, "\tBuild a tree for each input sequence set meeting the membership criteria.");
+		//		commands.put(HandyConstants.SINGLE_TREE_METHOD, "Method used to build single-gene trees.");
+		//		commands.put(HandyConstants.MATRIX_EVALUATION, "\tPerform matrix evaluation to determine which amino acid substitution matrix performs best for this dataset.");
 		//		commands.put(HandyConstants.HELP, "\tPrint this help.");
 		//		commands.put(HandyConstants.HELP, "\tPrint this help.");
 	}
@@ -766,9 +770,9 @@ public class PhylogenomicPipeline2 {
 				if(multipleSequenceAligner == null) {
 					multipleSequenceAligner = new MultipleSequenceAligner();
 				}
-//				if(alignmentFile.exists()) {
-//					logger.info("Realigning sequence set " + sequenceSet.getName());
-//				}
+				//				if(alignmentFile.exists()) {
+				//					logger.info("Realigning sequence set " + sequenceSet.getName());
+				//				}
 				r = multipleSequenceAligner.getMSA(sequenceSet);
 			}
 			if(r != null) {
@@ -793,8 +797,8 @@ public class PhylogenomicPipeline2 {
 					sequenceSetToAlignment.put(sequenceSet, r);
 				}
 			}
-//			System.out.println("alignmentFileName: " + alignmentFileName);
-//			new File(alignmentFileName).deleteOnExit();
+			//			System.out.println("alignmentFileName: " + alignmentFileName);
+			//			new File(alignmentFileName).deleteOnExit();
 		} 
 
 		return r;
@@ -853,7 +857,7 @@ public class PhylogenomicPipeline2 {
 			treeBuilder.setMLMatrix(mlMatrix);
 		}
 
-		treeBuilder.useRaxmlBranchLengths(true);
+		//		treeBuilder.useRaxmlBranchLengths(true);
 		treeBuilder.setRunName(runName);
 		treeBuilder.setTreeBuildingMethod(concatenatedTreeMethod);
 		treeBuilder.setBootstrapReps(bootstraps);
@@ -1574,7 +1578,7 @@ public class PhylogenomicPipeline2 {
 		public void setTreeBuildingMethod(String method) {
 			treeBuildingMethod = method;
 		}
-		
+
 		public void setMatrix(String mlMatrix) {
 			this.mlMatrix = mlMatrix;
 		}

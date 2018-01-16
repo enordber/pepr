@@ -26,6 +26,7 @@ public class FastTreeRunner implements Runnable{
 	private String ftPath = null;
 	private String runName;
 	private String constraints;
+	private int bootstrapReps;
 	private boolean useRaxmlBranchLengths = false;
 	private int threadCount = 1;
 	private boolean nucleotide = false;
@@ -64,17 +65,23 @@ public class FastTreeRunner implements Runnable{
 			//create FastTree command
 			String alignmentFileName = alignmentFile.getName();
 			String fastTreeOptions = " -gamma -nosupport ";
-			
+			if(getBootstrapReps() > 0) {
+				fastTreeOptions = " -gamma ";
+			}
+
 			if(nucleotide) {
 				fastTreeOptions = " -gtr -nt -nosupport ";
+				if(getBootstrapReps() > 0) {
+					fastTreeOptions = "  -gtr -nt  ";
+				}
 			}
 
 			if(useConstraints) {
 				fastTreeOptions = 
 						fastTreeOptions + "-constraints " + 
-					constraintsFileName + " ";
+								constraintsFileName + " ";
 			}
-			
+
 			String fastTreeCommand = fastTreePath + fastTreeOptions;
 			fastTreeCommand = fastTreeCommand + alignmentFileName;
 
@@ -87,6 +94,22 @@ public class FastTreeRunner implements Runnable{
 			CommandResults results = ExecUtilities.exec(fastTreeCommand);
 			if(results.getStdout().length > 0) {
 				String treeString = results.getStdout()[0];
+				//use AdvancedTree to convert decimal support values (0.0-1.0) to integer support values (0-100)
+				System.out.println("tree before changing support values:");
+				System.out.println(treeString);
+				AdvancedTree tree = new AdvancedTree(treeString);
+				String[] branchSupports = tree.getBasicTree().getBranchSupportStrings();
+				for(int i = 0; i < branchSupports.length; i++) {
+					if(branchSupports[i] != null) {
+						double support = Double.parseDouble(branchSupports[i]);
+						support *= 100;
+						branchSupports[i] = ""+ (int)support;
+					}
+				}
+				tree.getBasicTree().setBranchSupportStrings(branchSupports);
+				treeString = tree.getTreeString(true, true);
+				System.out.println("tree after changing support values:");
+				System.out.println(treeString);
 				if(getUseRaxmlBranchLengths()) {
 					String raxmlTreeString = getRaxmlBranchLengths(treeString, alignment);
 					if(raxmlTreeString == null) {
@@ -135,7 +158,7 @@ public class FastTreeRunner implements Runnable{
 			alignWriter.flush();
 			alignWriter.close();
 			String alignmentFileName = alignFile.getName();
-			
+
 			//write treeString to a file
 			File intreeFile = File.createTempFile("intree", ".nwk", userDir);
 			FileWriter fw = new FileWriter(intreeFile);
@@ -144,17 +167,17 @@ public class FastTreeRunner implements Runnable{
 			fw.close();
 
 			String intreeFileName = intreeFile.getName();
-			
+
 			//create raxml command String
 			String raxmlCommand = raxmlPath + 
-			       " -f e -m PROTGAMMAWAG ";
+					" -f e -m PROTGAMMAWAG ";
 			if(getThreadCount() > 1) {
 				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
 			}
-			
+
 			raxmlCommand = raxmlCommand + " -s " + alignmentFileName +
-			              " -n " + getRunName() + " -t " + intreeFileName;
-			
+					" -n " + getRunName() + " -t " + intreeFileName;
+
 			//run raxml
 			CommandResults raxmlResults = ExecUtilities.exec(raxmlCommand);
 
@@ -169,7 +192,7 @@ public class FastTreeRunner implements Runnable{
 		} catch (IOException e) {
 			logger.error(e);
 		}
-		
+
 		return r;
 	}
 
@@ -191,18 +214,18 @@ public class FastTreeRunner implements Runnable{
 	public void setAlignment(SequenceAlignment alignment) {
 		this.alignment = alignment;
 	}
-	
+
 	public void setConstraints(String constraints) {
 		this.constraints = constraints;
 	}
-	
+
 	public void setConstraintTree(String treeString) {
 		if(treeString != null) {
 			String constr = getFastTreeConstraintsForTree(treeString);
 			setConstraints(constr);
 		}
 	}
-	
+
 	private String getConstraints() {
 		return constraints;
 	}
@@ -214,7 +237,7 @@ public class FastTreeRunner implements Runnable{
 	private void setResult(String result) {
 		this.result = result;
 	}
-	
+
 	private String getFastTreeConstraintsForTree(String treeString) {
 		String r = null;
 		AdvancedTree tree = new AdvancedTree(treeString);
@@ -273,6 +296,14 @@ public class FastTreeRunner implements Runnable{
 
 	public void setNucleoide(boolean nuc) {
 		nucleotide = nuc;
+	}
+
+	private int getBootstrapReps() {
+		return bootstrapReps;
+	}
+
+	public void setBootstrapReps(int reps) {
+		bootstrapReps = reps;
 	}
 
 

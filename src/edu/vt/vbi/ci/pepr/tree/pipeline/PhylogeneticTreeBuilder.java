@@ -169,6 +169,7 @@ public class PhylogeneticTreeBuilder implements Runnable{
 		ftr.setNucleoide(nucleotide);
 		ftr.setAlignment(getAlignment());
 		ftr.setRunName(getRunName());
+		ftr.setBootstrapReps(getBootstrapReps());
 		ftr.setUseRaxmlBranchLengths(useRaxmlBranchLengths);
 		if(constraintTree != null) {
 			ftr.setConstraintTree(constraintTree);

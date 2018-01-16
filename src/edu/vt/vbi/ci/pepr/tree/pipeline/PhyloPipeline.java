@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Level;
@@ -95,8 +96,23 @@ public class PhyloPipeline {
 		System.exit(0);
 	}
 
+	private static boolean validateCommandLineProperties(CommandLineProperties clp) {
+		boolean r = true;
+		Set<String> keys = clp.keySet();
+		for(String key: keys) {
+			if(!commands.containsKey(key)) {
+				System.out.println("unknown option: " + key);
+//				r = false;
+			}
+		}
+		return r;
+	}
+	
 	public PhyloPipeline(String[] args) {
 		CommandLineProperties clp = new CommandLineProperties(args);
+		if(!validateCommandLineProperties(clp)) {
+			exit();
+		}
 		//set runName
 		runName = "pepr-" + System.currentTimeMillis();
 		runName = clp.getValues(HandyConstants.RUN_NAME, runName)[0];
@@ -1197,6 +1213,17 @@ public class PhyloPipeline {
 				"Proportion of max_taxa to be used as a minimum taxa value. Sequence sets with fewer taxa are not included in tree building. Default is 0.8");
 		//		commands.put(HandyConstants.TRACK, "\tSpecify a pre-defined track (set of options) to use. Tracks are identified by the sequence similarity search program used and the tree-building program used. Track options are:\n" +
 		//				"\t\t\t\t\t\tblat_fast\n\t\t\t\t\t\tblast_fast\n\t\t\t\t\t\tblat_raxml\n\t\t\t\t\t\tblast_raxml");
+		commands.put(HandyConstants.USE_BUNDLED_THIRD_PARTY_BINARIES, 
+				"Use included third-party binaries, rather than sytem-installed binaries. Default is True.");
+		commands.put(HandyConstants.PATRIC, 
+				"Enables custom PATRIC mode, which parses taxon names assuming PATRIC format, and generates some special output.");
+		commands.put(HandyConstants.OUTGROUP_COUNT, 
+				"Specifies the number of outgroup genomes to be selected from the outgroup pool for use in the tree.");
+		commands.put(HandyConstants.TRIM_PERCENT, 
+				"Specifies the proportion of homolog groups to be removed by the congruence filter. Default is 10");
+		commands.put(HandyConstants.ML_MATRIX, 
+				"Specifies the transition matrix to use for maximum likelihood. Options are any matric supported by RAxML. Default is PROTGAMMAWAG.");
+
 	}
 
 	/**

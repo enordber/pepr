@@ -490,7 +490,15 @@ public class AdvancedTree {
 				if(supportStrings[i] == null || supportStrings[i].length() ==0) {
 					branchSupports[i] = defaultBranchSupport;
 				} else {
+					try {
 					branchSupports[i] = Integer.parseInt(supportStrings[i]);
+					} catch(NumberFormatException nfe) {
+						//try parsing value as a double and multiply by 100, for trees that contain 
+						//probabilities for support (e.g. FastTree)
+						double support = Double.parseDouble(supportStrings[i]);
+						support *= 100;
+						branchSupports[i] = (int) support;
+					}
 				}
 			}
 		}
