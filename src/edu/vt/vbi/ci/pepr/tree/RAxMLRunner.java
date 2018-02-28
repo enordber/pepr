@@ -241,8 +241,8 @@ public class RAxMLRunner {
 			String algorithmOption = " -f d ";
 
 			raxmlOptions = algorithmOption + 
-			" -m PROTGAMMAWAGF -s " 
-			+ infileName + " -n " + runName + " -Y";
+			" -m " + matrix + " -s " 
+			+ infileName + " -n " + runName + " -y";
 			if(getThreadCount() > 1) {
 				raxmlOptions = raxmlOptions + " -T " + getThreadCount();
 			}
@@ -263,7 +263,7 @@ public class RAxMLRunner {
 			" -m " + matrix + " -s " 
 			+ infileName + " -n " + runName + "BL" + " -t " + parsimonyTreeFileName;
 			if(getThreadCount() > 1) {
-				raxmlCommand = raxmlCommand + " -T " + getThreadCount();
+				raxmlOptions = raxmlOptions + " -T " + getThreadCount();
 			}
 			
 			raxmlCommand = raxmlPath + raxmlOptions;
@@ -364,6 +364,7 @@ public class RAxMLRunner {
 		TextFile treeFile;
 		StringBuffer sb = new StringBuffer();
 		try {
+			System.out.println("RAxMLRunner.getParsimonyWithBLTree() parsimony tree file name: " + parsimonyTreeWithBL);
 			treeFile = new TextFile(parsimonyTreeWithBL);
 			String[] treeFileLines = treeFile.getAllLines();
 			for(int i = 0; i < treeFileLines.length; i++) {
@@ -376,9 +377,8 @@ public class RAxMLRunner {
 		} catch (IOException ioe) {
 			logger.error(ioe);
 		}
-
+		System.out.println("RAxMLRunner.getParsimonyWithBLTree() parsimony tree: " + sb.toString());
 		return sb.toString();
-
 	}
 
 	private int getOddRandomSeed() {

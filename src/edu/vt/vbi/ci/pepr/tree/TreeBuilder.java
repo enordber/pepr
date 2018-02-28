@@ -153,8 +153,13 @@ public class TreeBuilder {
 			double[][] distanceMatrix, int matrixType) {
 		String r = null;
 
+		//if similarity matrix is passed in, convert it to a distance matrix
+		if(matrixType == SIMILARITY) {
+			distanceMatrix = convertSimilarityToDistanceMatrix(distanceMatrix);
+			matrixType = DISTANCE;
+		}
 		//create Q matrix from distance Matrix
-		//find pair of nodes with minimum distance
+		//find pair of nodes with minimum distance/maximum similarity
 		double[][] Q = new double[distanceMatrix.length][distanceMatrix.length];
 
 		//calculate sums for each row
@@ -333,6 +338,24 @@ public class TreeBuilder {
 
 				r = "(" + newNodes[0] + ":" + distance0 + ","
 				+ newNodes[1] + ":" + distance1 + "," + newNodes[2] + ":" + distance2 + ");";
+			}
+		}
+		return r;
+	}
+
+	private static double[][] convertSimilarityToDistanceMatrix(double[][] similarityMatrix) {
+		double[][] r = new double[similarityMatrix.length][similarityMatrix.length];
+		//find maximum similarity and subtract everything from that to get distances
+		//assume maximum similarity is on the diagional, because it will be a self-similarity score
+		double maxSimilarity = 0;
+		for(int i = 0; i < similarityMatrix.length; i++){
+			if(similarityMatrix[i][i] > maxSimilarity) {
+				maxSimilarity = similarityMatrix[i][i];
+			}
+		}
+		for(int i = 0; i < r.length; i++){
+			for(int j = 0; j < r.length; j++) {
+				r[i][j] = maxSimilarity - similarityMatrix[i][j];
 			}
 		}
 		return r;
@@ -608,9 +631,9 @@ public class TreeBuilder {
 	private static void printMatrices(String[] nodes,
 			double[][] distanceMatrix, double[][] q) {
 
-		System.out.println("distance matrix:");
 
 		if(nodes != null) {
+			System.out.println(nodes.length + " nodes: ");
 			for(int i = 0; i < nodes.length; i++) {
 				System.out.print(nodes[i] + "\t");
 			}
@@ -618,6 +641,7 @@ public class TreeBuilder {
 		}
 
 		if(distanceMatrix != null) {
+			System.out.println("distance matrix:");
 			for(int i = 0; i < distanceMatrix.length; i++) {
 				for(int j = 0; j < distanceMatrix.length; j++) {
 					System.out.print(distanceMatrix[i][j] + "\t");
@@ -707,7 +731,7 @@ public class TreeBuilder {
 		int[] r = null;
 		//find pair of indices with maximum value
 		int maxI = -1, maxJ = -1; //indices for pair with maximum value
-		double maxDistance = Double.MIN_VALUE; //maximum value so far
+		double maxDistance = Double.NEGATIVE_INFINITY; //maximum value so far
 
 		for(int i = 0; i < matrix.length; i++) {
 			for(int j = i+1; j < matrix[i].length; j++) {

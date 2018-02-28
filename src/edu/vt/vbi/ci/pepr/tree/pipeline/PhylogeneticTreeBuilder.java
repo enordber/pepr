@@ -13,9 +13,11 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import edu.vt.vbi.ci.pepr.alignment.AlignmentUtilities;
 import edu.vt.vbi.ci.pepr.alignment.SequenceAlignment;
 import edu.vt.vbi.ci.pepr.tree.FastTreeRunner;
 import edu.vt.vbi.ci.pepr.tree.RAxMLRunner;
+import edu.vt.vbi.ci.pepr.tree.TreeBuilder;
 import edu.vt.vbi.ci.util.CommandResults;
 import edu.vt.vbi.ci.util.HandyConstants;
 
@@ -106,9 +108,23 @@ public class PhylogeneticTreeBuilder implements Runnable{
 			}
 			buildRaxmlParsimonyTree();
 		} else if(treeBuildingMethod.equals(HandyConstants.PARSIMONY_BL)) {
+			if(debug) {
+				System.out.println("PhylogeneticTreeBuilder.run() " +
+				"build raxml parsimony tree with branch lengths");
+			}
 			buildRaxmlParsimonyTreeWithBL();
 		} else if(treeBuildingMethod.equals(HandyConstants.FAST_TREE)) {
+			if(debug) {
+				System.out.println("PhylogeneticTreeBuilder.run() " +
+				"build tree with FastTree");
+			}
 			buildFastTree();
+		} else if(treeBuildingMethod.equals(HandyConstants.NEIGHBOR_JOINING)) {
+			if(debug) {
+				System.out.println("PhylogeneticTreeBuilder.run() " +
+				"build neighbor joining");
+			}
+			buildNeighborJoiningTree();
 		}
 	}
 
@@ -176,6 +192,19 @@ public class PhylogeneticTreeBuilder implements Runnable{
 		}
 		ftr.run();
 		String tree = ftr.getResult();
+		setTreeString(tree);
+	}
+	
+	private void buildNeighborJoiningTree() {
+		SequenceAlignment concatenatedAlignment = getAlignment();
+		String[] taxa = concatenatedAlignment.getTaxa();
+		int[][] scoreMatrix = AlignmentUtilities.
+				loadScoringMatrixFromResource(AlignmentUtilities.BLOSUM_62);
+		double[][] similarityMatrix = 
+				concatenatedAlignment.getPairwiseScores(scoreMatrix);
+
+		String tree = TreeBuilder.getNJTreeString(taxa, similarityMatrix, TreeBuilder.SIMILARITY);
+		logger.info("neighbor-joining tree: " + tree);
 		setTreeString(tree);
 	}
 

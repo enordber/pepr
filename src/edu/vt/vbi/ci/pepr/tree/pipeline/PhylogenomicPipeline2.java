@@ -571,8 +571,9 @@ public class PhylogenomicPipeline2 {
 		}
 		SequenceSetProviderImpl r =
 				new SequenceSetProviderImpl(sequenceFileNames, minTaxa, maxTaxa);
-
+		System.out.println("sequence sets: " + r.getSequenceSetCount());
 		if(repOnly) {
+			System.out.println("removing non-representative sequence sets");
 			r.removeNonRepresentative();
 		}
 
@@ -932,7 +933,7 @@ public class PhylogenomicPipeline2 {
 			logger.info("build parsimony tree with branch lengths");
 			r.setTreeBuildingMethod(HandyConstants.PARSIMONY_BL);
 		} else {
-			logger.info("build maximum likelihood tree");
+//			logger.info("build maximum likelihood tree");
 			r.setTreeBuildingMethod(HandyConstants.MAXIMUM_LIKELIHOOD);
 		}
 		return r;
@@ -1096,7 +1097,7 @@ public class PhylogenomicPipeline2 {
 			e.printStackTrace();
 		}
 		fullTreeString = fullTreeThread.toString();
-
+		System.out.println("PhylogenomicPipeline2.buildConcatenatedTreeWithGeneWiseJackKnifeSupport() fullTreeString: " + fullTreeString);
 		//get full concatenated alignment
 		//		SequenceAlignment concatenatedAlignment = 
 		//			getConcatenatedAlignment(provider);
