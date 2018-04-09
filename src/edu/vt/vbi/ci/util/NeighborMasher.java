@@ -386,10 +386,10 @@ public class NeighborMasher {
 			String taxonName = candidate.getTaxonName();
 			String[] parts = taxonName.split("_@_");
 			fw.write(parts[1]);
-			fw.write("\t");
-			fw.write(parts[0]);
-			fw.write("\t");
-			fw.write(candidate.getGenomeFileName());
+//			fw.write("\t");
+//			fw.write(parts[0]);
+//			fw.write("\t");
+//			fw.write(candidate.getGenomeFileName());
 			fw.write("\n");
 		}
 		fw.flush();
@@ -406,10 +406,10 @@ public class NeighborMasher {
 				String taxonName = fsf.getTaxa()[0];
 				String[] parts = taxonName.split("_@_");
 				fw.write(parts[1]);
-				fw.write("\t");
-				fw.write(parts[0]);
-				fw.write("\t");
-				fw.write(ingroupFileName);
+//				fw.write("\t");
+//				fw.write(parts[0]);
+//				fw.write("\t");
+//				fw.write(ingroupFileName);
 				fw.write("\n");
 			}
 			fw.flush();
