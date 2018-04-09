@@ -273,7 +273,8 @@ public class HMMSetEnhancer {
 						//truncated and this is to correct for that problem.	
 						logger.info("ignoring duplicate member from genome " 
 								+ genomeSequenceFiles[genomeIndex].getFileName() + ". hmmResults[" + i + "]:.getId(): " +
-								hmmResults[i].getId() + " with score: " + hmmResults[i].getScore() + " for set " + hmmResults[i].getSet());
+								hmmResults[i].getId() + " with score: " + hmmResults[i].getScore() + " for set " + hmmResults[i].getSet()
+								+ " current score for this genome for this set is " + genomeScore[genomeIndex]);
 					} else {
 						//duplicate genome seen - stop collecting for this set
 						collectingForSet = false;

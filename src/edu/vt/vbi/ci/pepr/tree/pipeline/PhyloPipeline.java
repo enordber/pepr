@@ -407,7 +407,7 @@ public class PhyloPipeline {
 
 		float minTaxaMultiplier = 
 				Float.parseFloat(clp.getValues(HandyConstants.MIN_TAXA_MULTIPLIER,
-						"0.99")[0]);
+						"0.80")[0]);
 		int maxTaxa = 
 				Integer.parseInt(clp.getValues(HandyConstants.MAX_TAXA,
 						"" + inputSequenceFiles.length)[0]);

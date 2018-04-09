@@ -94,22 +94,24 @@ public class FastTreeRunner implements Runnable{
 			CommandResults results = ExecUtilities.exec(fastTreeCommand);
 			if(results.getStdout().length > 0) {
 				String treeString = results.getStdout()[0];
-				//use AdvancedTree to convert decimal support values (0.0-1.0) to integer support values (0-100)
-				System.out.println("tree before changing support values:");
-				System.out.println(treeString);
-				AdvancedTree tree = new AdvancedTree(treeString);
-				String[] branchSupports = tree.getBasicTree().getBranchSupportStrings();
-				for(int i = 0; i < branchSupports.length; i++) {
-					if(branchSupports[i] != null) {
-						double support = Double.parseDouble(branchSupports[i]);
-						support *= 100;
-						branchSupports[i] = ""+ (int)support;
+				if(getBootstrapReps() > 0) {
+					//use AdvancedTree to convert decimal support values (0.0-1.0) to integer support values (0-100)
+					System.out.println("tree before changing support values:");
+					System.out.println(treeString);
+					AdvancedTree tree = new AdvancedTree(treeString);
+					String[] branchSupports = tree.getBasicTree().getBranchSupportStrings();
+					for(int i = 0; i < branchSupports.length; i++) {
+						if(branchSupports[i] != null) {
+							double support = Double.parseDouble(branchSupports[i]);
+							support *= 100;
+							branchSupports[i] = ""+ (int)support;
+						}
 					}
+					tree.getBasicTree().setBranchSupportStrings(branchSupports);
+					treeString = tree.getTreeString(true, true);
+					System.out.println("tree after changing support values:");
+					System.out.println(treeString);
 				}
-				tree.getBasicTree().setBranchSupportStrings(branchSupports);
-				treeString = tree.getTreeString(true, true);
-				System.out.println("tree after changing support values:");
-				System.out.println(treeString);
 				if(getUseRaxmlBranchLengths()) {
 					String raxmlTreeString = getRaxmlBranchLengths(treeString, alignment);
 					if(raxmlTreeString == null) {

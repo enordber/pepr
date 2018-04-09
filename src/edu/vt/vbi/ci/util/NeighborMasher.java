@@ -138,6 +138,8 @@ public class NeighborMasher {
 			//select outgroup genomes
 			GenomeCandidate[] selectedOutgroupCandidates = selectOutgroupCandidates(outgroupCandidates, maximumIngroupDistance, ingroupDistanceStdDev, getOutgroupCount());
 			try {
+				//write ingroup file
+				writeIngroupFile(getRunName() + "_ingroup.txt");
 				//write outgroup file
 				writeOutgroupFile(selectedOutgroupCandidates, getRunName() + "_outgroup.txt");
 			} catch (IOException e) {
@@ -235,8 +237,9 @@ public class NeighborMasher {
 			setIngroupGenomeFileNames(clp.getValues(INGROUP));
 			setOutgroupGenomeFileNames(clp.getValues(OUTGROUP));
 			setMashPath(clp.getValues(MASH, mashPath)[0]);
-			setMashProcessorCount(Integer.parseInt(clp.getValues(MASH_PROCESSOR_COUNT, ""+mashProcessorCount)[0]));
-
+			try {
+				setMashProcessorCount(Integer.parseInt(clp.getValues(MASH_PROCESSOR_COUNT, ""+mashProcessorCount)[0]));
+			} catch(NumberFormatException nfe) {}
 			if(ingroupGenomeFileNames == null || ingroupGenomeFileNames.length == 0) {
 				System.out.println("No ingroup genomes have been specified. Specify ingroup genome file names with the option '-" + INGROUP + "'");
 				r = false;
@@ -391,6 +394,30 @@ public class NeighborMasher {
 		}
 		fw.flush();
 		fw.close();
+	}
+	
+	private void writeIngroupFile(String fileName) {
+		System.out.println("NeighborMasher.writeIngroupFile() " + fileName);
+		try {
+			FileWriter fw = new FileWriter(fileName);
+			String[] ingroupFileNames = getIngroupGenomeFileNames();
+			for(String ingroupFileName: ingroupFileNames) {
+				FastaSequenceFile fsf = new FastaSequenceFile(ingroupFileName);
+				String taxonName = fsf.getTaxa()[0];
+				String[] parts = taxonName.split("_@_");
+				fw.write(parts[1]);
+				fw.write("\t");
+				fw.write(parts[0]);
+				fw.write("\t");
+				fw.write(ingroupFileName);
+				fw.write("\n");
+			}
+			fw.flush();
+			fw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -857,7 +884,7 @@ public class NeighborMasher {
 		}
 		return ingroupTaxa;
 	}
-
+	
 	private void setIngroupGenomeFileNames(String[] ingroupGenomeFileNames) {
 		this.ingroupGenomeFileNames = ingroupGenomeFileNames;
 	}
