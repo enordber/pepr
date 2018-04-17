@@ -1,14 +1,25 @@
 package edu.vt.vbi.ci.util;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Scanner;
 import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
 
 import edu.vt.vbi.ci.pepr.stats.StatisticsUtilities;
 import edu.vt.vbi.ci.pepr.tree.AdvancedTree;
@@ -72,6 +83,11 @@ public class NeighborMasher {
 	/* -h */
 	private static final String HELP = "h";
 
+	private static Logger logger;
+	static{
+		logger = Logger.getLogger("NeighborMasher");
+	}
+
 	/*
 	 * Maps from a genome name to a HashMap of other genome names mapped and their distances.
 	 * queryToTargetDistances.get(genomeA).get(genomeB) == distance between genomeA and genomeB.
@@ -98,7 +114,7 @@ public class NeighborMasher {
 		//run mash ingroup vs ingroup
 		try {
 			if(expandedIngroupSize > getIngroupGenomeFileNames().length) {
-//				expandIngroup(expandedIngroupSize);
+				//				expandIngroup(expandedIngroupSize);
 				slowlyExpandIngroup(expandedIngroupSize);
 				System.out.println("build tree with expanded ingroup...");
 			} 
@@ -137,15 +153,23 @@ public class NeighborMasher {
 			GenomeCandidate[] outgroupCandidates = getMinDistanceForEachOutgroupToIngroupSketch();
 			//select outgroup genomes
 			GenomeCandidate[] selectedOutgroupCandidates = selectOutgroupCandidates(outgroupCandidates, maximumIngroupDistance, ingroupDistanceStdDev, getOutgroupCount());
+
 			try {
 				//write ingroup file
 				writeIngroupFile(getRunName() + "_ingroup.txt");
+			} catch (IOException e) {
+				System.out.println("There was a problem writing the ingroup file:");
+				e.printStackTrace();
+			} 
+
+			try {
 				//write outgroup file
 				writeOutgroupFile(selectedOutgroupCandidates, getRunName() + "_outgroup.txt");
 			} catch (IOException e) {
 				System.out.println("There was a problem writing the outgroup file:");
 				e.printStackTrace();
 			}
+
 			//if(outgroup_only) exit
 			if(!outgroupOnly) {
 				//build rooted tree, including outgroup
@@ -249,12 +273,13 @@ public class NeighborMasher {
 	}
 
 	private void expandIngroup(int targetIngroupSize) throws IOException {
-		System.out.println(">NeighborMasher.expandOutgroup() targetSize: " + targetIngroupSize + " initial size: " + getIngroupGenomeFileNames().length);
+		System.out.println(">NeighborMasher.expandIngroup() targetSize: " + targetIngroupSize + " initial size: " + getIngroupGenomeFileNames().length);
 		//if outgroup sketch was provided, load genome file names from sketch
 		String[] outgroupGenomeNamesFromSketch = getGenomeFileNamesFromSketch(getOutgroupSketchFileName());
 		runIngroupVsIngroupMash();
 		runOutgroupVsIngroupMash();
 
+		System.out.println("NeighborMasher.expandIngroup() outgroupGenomeNamesFrom Sketch: " + outgroupGenomeNamesFromSketch.length);
 		GenomeCandidate[] expandedIngroupCandidates = new GenomeCandidate[outgroupGenomeNamesFromSketch.length];
 		//for each outgroup genome, calculate the median distance from the ingroup genomes
 		for(int i = 0; i < expandedIngroupCandidates.length; i++) {
@@ -264,6 +289,7 @@ public class NeighborMasher {
 		}
 
 		Arrays.sort(expandedIngroupCandidates);
+		System.out.println("NeighborMasher.expandIngroup() expandedIngroupCandidates: " + expandedIngroupCandidates.length);
 
 		ArrayList<String> expandedIngroupGenomeFileNames = new ArrayList<String>(targetIngroupSize);
 		for(String ingroupFileName: getIngroupGenomeFileNames()) {
@@ -287,7 +313,7 @@ public class NeighborMasher {
 		String[] newIngroup = expandedIngroupGenomeFileNames.toArray(new String[0]);
 		setIngroupGenomeFileNames(newIngroup);
 		ingroupTaxa = null; //so taxa will be re-done on next call to getIngroupTaxa()
-		System.out.println("<NeighborMasher.expandOutgroup() new size: " + getIngroupGenomeFileNames().length);
+		System.out.println("<NeighborMasher.expandIngroup() new size: " + getIngroupGenomeFileNames().length);
 	}
 
 	private void addNearestNeighborsToIngroup() {
@@ -323,7 +349,7 @@ public class NeighborMasher {
 		setIngroupGenomeFileNames(expandedIngroupGenomeFileNames);
 		System.out.println("<NeighborMasher.addNearestNeighborsToIngroup() " + getIngroupTaxa().length);
 	}
-	
+
 	private double getDistanceFromIngroup(String outgroupGenomeFileName) {
 		double r = -1;
 		String[] ingroupTaxa = getIngroupTaxa();
@@ -343,26 +369,26 @@ public class NeighborMasher {
 		}
 
 		Arrays.sort(distances);
-//		r = distances[distances.length/2];
+		//		r = distances[distances.length/2];
 		r = distances[distances.length-1];
 		return r;
 	}
 
 	private String[] getGenomeFileNamesFromSketch(String sketchFileName) {
 		String[] r = null;
-		String mashCommand = getMashPath() + " info " + sketchFileName;
-		System.out.println("read outgroup genome file names from sketch file...");
+		String mashCommand = getMashPath() + " info -t " + sketchFileName;
+//		System.out.println("NeighborMasher.getGenomeFileNamesFromSketch() read outgroup genome file names from sketch file...");
 		System.out.println(mashCommand);
 		CommandResults results = ExecUtilities.exec(mashCommand);
 		String[] stdout = results.getStdout();
 
+		Pattern delimiter = Pattern.compile("\\t");
+		String commentChar = "#";
 		ArrayList<String> fileNames = new ArrayList<String>();
-		int expectedFields = 5;
-		int genomeFileNameField = 3;
-		Pattern delimiter = Pattern.compile("\\s+");
+		int genomeFileNameField = 2;
 		for(String line: stdout) {
-			String[] fields = delimiter.split(line);
-			if(fields.length == expectedFields && !fields[genomeFileNameField].startsWith("[")) {
+			if(!line.startsWith(commentChar)) {
+				String[] fields = delimiter.split(line);
 				String genomeFileName = fields[genomeFileNameField];
 				fileNames.add(genomeFileName);
 			}
@@ -386,38 +412,33 @@ public class NeighborMasher {
 			String taxonName = candidate.getTaxonName();
 			String[] parts = taxonName.split("_@_");
 			fw.write(parts[1]);
-//			fw.write("\t");
-//			fw.write(parts[0]);
-//			fw.write("\t");
-//			fw.write(candidate.getGenomeFileName());
+			//			fw.write("\t");
+			//			fw.write(parts[0]);
+			//			fw.write("\t");
+			//			fw.write(candidate.getGenomeFileName());
 			fw.write("\n");
 		}
 		fw.flush();
 		fw.close();
 	}
-	
-	private void writeIngroupFile(String fileName) {
+
+	private void writeIngroupFile(String fileName) throws IOException {
 		System.out.println("NeighborMasher.writeIngroupFile() " + fileName);
-		try {
-			FileWriter fw = new FileWriter(fileName);
-			String[] ingroupFileNames = getIngroupGenomeFileNames();
-			for(String ingroupFileName: ingroupFileNames) {
-				FastaSequenceFile fsf = new FastaSequenceFile(ingroupFileName);
-				String taxonName = fsf.getTaxa()[0];
-				String[] parts = taxonName.split("_@_");
-				fw.write(parts[1]);
-//				fw.write("\t");
-//				fw.write(parts[0]);
-//				fw.write("\t");
-//				fw.write(ingroupFileName);
-				fw.write("\n");
-			}
-			fw.flush();
-			fw.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		FileWriter fw = new FileWriter(fileName);
+		String[] ingroupFileNames = getIngroupGenomeFileNames();
+		for(String ingroupFileName: ingroupFileNames) {
+			FastaSequenceFile fsf = new FastaSequenceFile(ingroupFileName);
+			String taxonName = fsf.getTaxa()[0];
+			String[] parts = taxonName.split("_@_");
+			fw.write(parts[1]);
+			//				fw.write("\t");
+			//				fw.write(parts[0]);
+			//				fw.write("\t");
+			//				fw.write(ingroupFileName);
+			fw.write("\n");
 		}
+		fw.flush();
+		fw.close();
 	}
 
 	/**
@@ -444,7 +465,7 @@ public class NeighborMasher {
 	 * @param distance
 	 */
 	private void setGenomeDistance(String genomeA, String genomeB, Double distance) {
-		//System.out.println(">NeighborMasher.setGenomeDistance() " + genomeA + " vs " + genomeB + ": " + distance);
+		//		System.out.println(">NeighborMasher.setGenomeDistance() " + genomeA + " vs " + genomeB + ": " + distance);
 		HashMap<String,Double> genomeAMap = genomeToGenomeDistances.get(genomeA);
 		if(genomeAMap == null) {
 			genomeAMap = new HashMap<String,Double>();
@@ -529,13 +550,13 @@ public class NeighborMasher {
 					for(GenomeCandidate candidate: candidatesAtDistance) {
 						System.out.println(candidate + "\t" + distanceKeys[i]);
 						selectedCandidates.add(candidate);
-//						if(selectedCandidates.size() == count) {
-							break;
-//						}
-					}
-//					if(selectedCandidates.size() == count) {
+						//						if(selectedCandidates.size() == count) {
 						break;
-//					}					
+						//						}
+					}
+					//					if(selectedCandidates.size() == count) {
+					break;
+					//					}					
 				}
 			}
 		}
@@ -672,14 +693,16 @@ public class NeighborMasher {
 	}
 
 	private void readMashResults(CommandResults mashResults) throws IOException {
+		System.out.println(">NeighborMasher.readMashResults()");
 		String[] stdout = mashResults.getStdout();
-		Pattern delimiter = Pattern.compile("\\t");
+		Pattern delimiter = Pattern.compile("\\s+");
 		int targetIndex = 0;
 		int queryIndex = 1;
 		int distanceIndex = 2;
-
+//		System.out.println("Mash result lines: " + stdout.length);
 		for(String line: stdout) {
 			String[] fields = delimiter.split(line);
+			//			System.out.println("fields: " + fields.length + ": " + Arrays.toString(fields));
 			String target = fields[targetIndex];
 			String targetGenomeName = getTaxonName(target);
 			String query = fields[queryIndex];
@@ -687,6 +710,7 @@ public class NeighborMasher {
 			Double distance = Double.valueOf(fields[distanceIndex]);
 			setGenomeDistance(targetGenomeName, queryGenomeName, distance);
 		}
+		System.out.println("<NeighborMasher.readMashResults()");
 	}
 
 	private void runOutgroupVsIngroupMash() throws IOException {
@@ -728,7 +752,7 @@ public class NeighborMasher {
 		CommandResults results = ExecUtilities.exec(mashCommand);
 		String[] stdout = results.getStdout();
 
-		Pattern pattern = Pattern.compile("\\t");
+		Pattern pattern = Pattern.compile("\\s+");
 		int queryIndex = 1;
 		int distanceFieldIndex = 2;
 		for(String line: stdout) {
@@ -787,7 +811,7 @@ public class NeighborMasher {
 		for(int i = 0; i < taxa.length; i++) {
 			for(int j = i+1; j < taxa.length; j++) {
 				r[index++] = getGenomeDistance(taxa[i], taxa[j]);
-//				System.out.println("\t" + taxa[i] + " vs " + taxa[j] + ": " + r[index-1]);
+				//				System.out.println("\t" + taxa[i] + " vs " + taxa[j] + ": " + r[index-1]);
 			}
 		}
 		return r;
@@ -884,7 +908,7 @@ public class NeighborMasher {
 		}
 		return ingroupTaxa;
 	}
-	
+
 	private void setIngroupGenomeFileNames(String[] ingroupGenomeFileNames) {
 		this.ingroupGenomeFileNames = ingroupGenomeFileNames;
 	}
@@ -916,13 +940,18 @@ public class NeighborMasher {
 	private String getTaxonName(String genomeFileName) throws IOException {
 		String r = genomeFileNameToTaxonName.get(genomeFileName);
 		if(r == null) {
-			r = new FastaSequenceFile(genomeFileName).getTaxa()[0];
+			//			System.out.println("NeighborMasher.getTaxonName() for file " + genomeFileName);
+			BufferedReader br = new BufferedReader(new FileReader(genomeFileName));
+			String titleLine = br.readLine();
+			br.close();
+			r = FastaUtilities.getTaxonFromTitle(titleLine);
+			//			System.out.println("\ttaxon name: " + r);
 			genomeFileNameToTaxonName.put(genomeFileName, r);
 			taxonNameToGenomeFileName.put(r, genomeFileName);
 		}
 		return r;
 	}
-	
+
 	private String getGenomeFileName(String taxon) {
 		String r = null;
 		r = taxonNameToGenomeFileName.get(taxon);

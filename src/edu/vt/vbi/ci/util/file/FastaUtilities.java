@@ -3,6 +3,15 @@ package edu.vt.vbi.ci.util.file;
 public class FastaUtilities {
 	private static final String PIPE_REPLACEMENT = "@";
 	private static boolean stripPipeAndSuffix = true;
+	private static final String[] forbiddenChars = new String[]{
+			" ",
+			"\\(",
+			"\\)",
+			":",
+			",",
+			"\\[",
+			"\\]"
+	};
 
 	/**
 	 * Searches through each title for something that
@@ -15,15 +24,6 @@ public class FastaUtilities {
 	 */
 	public static String[] getTaxaFromTitles(String[] titles) {
 		String[] taxa = new String[titles.length];
-		String[] forbiddenChars = new String[]{
-				" ",
-				"\\(",
-				"\\)",
-				":",
-				",",
-				"\\[",
-				"\\]"
-		};
 		for(int i = 0; i < titles.length; i++) {
 			taxa[i] = getTaxonFromTitle(titles[i]);
 
@@ -92,6 +92,24 @@ public class FastaUtilities {
 				r = title;
 			}
 		}
+		
+		//some of the taxon names contain extra stuff,
+		//so try to remove that here
+		if(stripPipeAndSuffix) {
+			int pipeIndex = r.indexOf("|");
+			if(pipeIndex > -1) {
+				r = r.substring(0, pipeIndex).trim();
+			}
+		} else {
+			r = r.replaceAll("\\|", "@");
+		}
+
+		//replace forbidden characters with underscore
+		for(int j = 0; j < forbiddenChars.length; j++) {
+			r = r.replaceAll(forbiddenChars[j], "_");						
+			r = r.replaceAll("__", "_");						
+		}
+
 		return r;
 	}
 

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 
@@ -82,6 +83,7 @@ public class ExecUtilities {
 		InputStream errStream = proc.getErrorStream();
 		BufferedReader reader = 
 				new BufferedReader(new InputStreamReader(is));
+		
 		BufferedReader errorReader = 
 				new BufferedReader(new InputStreamReader(errStream));
 
