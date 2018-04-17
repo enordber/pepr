@@ -275,7 +275,8 @@ public class NeighborMasher {
 	private void expandIngroup(int targetIngroupSize) throws IOException {
 		System.out.println(">NeighborMasher.expandIngroup() targetSize: " + targetIngroupSize + " initial size: " + getIngroupGenomeFileNames().length);
 		//if outgroup sketch was provided, load genome file names from sketch
-		String[] outgroupGenomeNamesFromSketch = getGenomeFileNamesFromSketch(getOutgroupSketchFileName());
+//		String[] outgroupGenomeNamesFromSketch = getGenomeFileNamesFromSketch(getOutgroupSketchFileName());
+		String[] outgroupGenomeNamesFromSketch = getOutgroupGenomeFileNames();
 		runIngroupVsIngroupMash();
 		runOutgroupVsIngroupMash();
 
@@ -914,6 +915,9 @@ public class NeighborMasher {
 	}
 
 	private String[] getOutgroupGenomeFileNames() {
+		if(outgroupGenomeFileNames == null) {
+			outgroupGenomeFileNames = getGenomeFileNamesFromSketch(getOutgroupSketchFileName());
+		}
 		return outgroupGenomeFileNames;
 	}
 
