@@ -124,7 +124,8 @@ public class NeighborMasher {
 			e1.printStackTrace();
 		}
 		//if(!outgroup_only) build unrooted ingroup tree
-		if(!isOutgroupOnly()) {
+		//must have at least four taxa to make a tree. All trees with three taxa are the same
+		if(!isOutgroupOnly() && getExpandedIngroupSize() > 3) {
 			try {
 				String ingroupTree = buildIngroupTree();
 				String ingroupTreeFileName = getRunName() + "_k"  + getMashKmerLength() + "_s" + getMashSketchSize() + "_ingroup_nj.nwk";
@@ -175,12 +176,14 @@ public class NeighborMasher {
 				//build rooted tree, including outgroup
 				try {
 					printSomething(selectedOutgroupCandidates);
-					String rootedTree = buildRootedTree(selectedOutgroupCandidates);
-					String rootedTreeFileName = getRunName() + "_k"  + getMashKmerLength() + "_s" + getMashSketchSize() + "_rooted_nj.nwk";
+					//must have at least four taxa to make a tree. All trees with three taxa are the same
+					if(getExpandedIngroupSize() + selectedOutgroupCandidates.length > 3) {
+						String rootedTree = buildRootedTree(selectedOutgroupCandidates);
+						String rootedTreeFileName = getRunName() + "_k"  + getMashKmerLength() + "_s" + getMashSketchSize() + "_rooted_nj.nwk";
 
-					//write rooted tree file
-					writeTreeFile(rootedTree, rootedTreeFileName);
-
+						//write rooted tree file
+						writeTreeFile(rootedTree, rootedTreeFileName);
+					}
 				} catch (IOException e) {
 					System.out.println("There was a problem building the rooted tree:");
 					e.printStackTrace();
@@ -275,7 +278,7 @@ public class NeighborMasher {
 	private void expandIngroup(int targetIngroupSize) throws IOException {
 		System.out.println(">NeighborMasher.expandIngroup() targetSize: " + targetIngroupSize + " initial size: " + getIngroupGenomeFileNames().length);
 		//if outgroup sketch was provided, load genome file names from sketch
-//		String[] outgroupGenomeNamesFromSketch = getGenomeFileNamesFromSketch(getOutgroupSketchFileName());
+		//		String[] outgroupGenomeNamesFromSketch = getGenomeFileNamesFromSketch(getOutgroupSketchFileName());
 		String[] outgroupGenomeNamesFromSketch = getOutgroupGenomeFileNames();
 		runIngroupVsIngroupMash();
 		runOutgroupVsIngroupMash();
@@ -378,7 +381,7 @@ public class NeighborMasher {
 	private String[] getGenomeFileNamesFromSketch(String sketchFileName) {
 		String[] r = null;
 		String mashCommand = getMashPath() + " info -t " + sketchFileName;
-//		System.out.println("NeighborMasher.getGenomeFileNamesFromSketch() read outgroup genome file names from sketch file...");
+		//		System.out.println("NeighborMasher.getGenomeFileNamesFromSketch() read outgroup genome file names from sketch file...");
 		System.out.println(mashCommand);
 		CommandResults results = ExecUtilities.exec(mashCommand);
 		String[] stdout = results.getStdout();
@@ -700,7 +703,7 @@ public class NeighborMasher {
 		int targetIndex = 0;
 		int queryIndex = 1;
 		int distanceIndex = 2;
-//		System.out.println("Mash result lines: " + stdout.length);
+		//		System.out.println("Mash result lines: " + stdout.length);
 		for(String line: stdout) {
 			String[] fields = delimiter.split(line);
 			//			System.out.println("fields: " + fields.length + ": " + Arrays.toString(fields));
