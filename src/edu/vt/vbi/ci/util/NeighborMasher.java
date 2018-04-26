@@ -29,8 +29,8 @@ import edu.vt.vbi.ci.util.file.FastaUtilities;
 
 public class NeighborMasher {
 	/* -ingroup_tree_only */
-	private static final String INGROUP_TREE_ONLY = "ingroup_tree_only";
-	private boolean ingroupTreeOnly = false;
+	private static final String INGROUP_ONLY = "ingroup_only";
+	private boolean ingroupOnly = false;
 
 	/* -outgroup_sketch */
 	private static final String OUTGROUP_SKETCH = "outgroup_sketch";
@@ -114,8 +114,8 @@ public class NeighborMasher {
 		//run mash ingroup vs ingroup
 		try {
 			if(expandedIngroupSize > getIngroupGenomeFileNames().length) {
-				//				expandIngroup(expandedIngroupSize);
-				slowlyExpandIngroup(expandedIngroupSize);
+				expandIngroup(expandedIngroupSize);
+//				slowlyExpandIngroup(expandedIngroupSize);
 				System.out.println("build tree with expanded ingroup...");
 			} 
 			runIngroupVsIngroupMash(); //doing this a second time can be avoided by mashing new ingroup members vs each other
@@ -136,8 +136,16 @@ public class NeighborMasher {
 			}
 		}
 
+		try {
+			//write ingroup file
+			writeIngroupFile(getRunName() + "_ingroup.txt");
+		} catch (IOException e) {
+			System.out.println("There was a problem writing the ingroup file:");
+			e.printStackTrace();
+		} 
+
 		//if(ingroup_tree_only) exit
-		if(!isIngroupTreeOnly()) {
+		if(!isIngroupOnly()) {
 			//calculate ingroup distance mean and standard deviation, and use them to determine minimum outgroup distance
 			double[] ingroupDistances = getIngroupPairDistances();
 			double meanIngroupDistance = StatisticsUtilities.getMean(ingroupDistances);
@@ -146,22 +154,14 @@ public class NeighborMasher {
 			System.out.println("ingroup distance: " + meanIngroupDistance + " +/- " + ingroupDistanceStdDev);
 			System.out.println("maximum ingroup pair distance: " + maximumIngroupDistance);
 
-			double minimumRequiredDistance = maximumIngroupDistance + (ingroupDistanceStdDev*2);
-			System.out.println("minimum required outgroup distance: " + minimumRequiredDistance);
+			//			double minimumRequiredDistance = maximumIngroupDistance + (ingroupDistanceStdDev*2);
+			//			System.out.println("NeighborMasher.run() minimum required outgroup distance: " + minimumRequiredDistance);
 
 			//build outgroup sketch file if necessary (if it doesn’t already exist)
 			//run mash outgroup vs ingroup
-			GenomeCandidate[] outgroupCandidates = getMinDistanceForEachOutgroupToIngroupSketch();
+			GenomeCandidate[] outgroupCandidates = getMaxDistanceForEachOutgroupToIngroupSketch();
 			//select outgroup genomes
 			GenomeCandidate[] selectedOutgroupCandidates = selectOutgroupCandidates(outgroupCandidates, maximumIngroupDistance, ingroupDistanceStdDev, getOutgroupCount());
-
-			try {
-				//write ingroup file
-				writeIngroupFile(getRunName() + "_ingroup.txt");
-			} catch (IOException e) {
-				System.out.println("There was a problem writing the ingroup file:");
-				e.printStackTrace();
-			} 
 
 			try {
 				//write outgroup file
@@ -209,8 +209,11 @@ public class NeighborMasher {
 			}
 			System.out.println("NeighborMasher.slowlyExpandIngroup() current size: " + ingroupTaxa.length + " targetSize: " + targetSize + " nextSize: " + nextSize);
 			expandIngroup(nextSize);
-			addNearestNeighborsToIngroup();
 			ingroupTaxa = getIngroupTaxa();
+			if(ingroupTaxa.length < targetSize) {
+				addNearestNeighborsToIngroup();
+				ingroupTaxa = getIngroupTaxa();
+			}
 		}
 	}
 
@@ -252,7 +255,7 @@ public class NeighborMasher {
 		if(printHelp) {
 			r = false;
 		} else {
-			setIngroupTreeOnly(clp.getValues(INGROUP_TREE_ONLY, ""+ingroupTreeOnly)[0].equalsIgnoreCase(HandyConstants.TRUE));
+			setIngroupTreeOnly(clp.getValues(INGROUP_ONLY, ""+ingroupOnly)[0].equalsIgnoreCase(HandyConstants.TRUE));
 			setOutgroupSketchFileName(clp.getValues(OUTGROUP_SKETCH, null)[0]);
 			setAutoAdjustParameters(clp.getValues(AUTO_ADJUST, ""+autoAdjustParameters)[0].equalsIgnoreCase(HandyConstants.TRUE));
 			setMashKmerLength(Integer.parseInt(clp.getValues(K, ""+mashKmerLength)[0]));
@@ -409,17 +412,13 @@ public class NeighborMasher {
 	}
 
 	private void writeOutgroupFile(GenomeCandidate[] selectedOutgroupCandidates, String fileName) throws IOException {
-		System.out.println("NeighborMasher.writeOutgroupFile() " + selectedOutgroupCandidates);
+		System.out.println("NeighborMasher.writeOutgroupFile() " + fileName);
 		System.out.println(selectedOutgroupCandidates.length);
 		FileWriter fw = new FileWriter(fileName);
 		for(GenomeCandidate candidate: selectedOutgroupCandidates) {
 			String taxonName = candidate.getTaxonName();
 			String[] parts = taxonName.split("_@_");
 			fw.write(parts[1]);
-			//			fw.write("\t");
-			//			fw.write(parts[0]);
-			//			fw.write("\t");
-			//			fw.write(candidate.getGenomeFileName());
 			fw.write("\n");
 		}
 		fw.flush();
@@ -435,10 +434,6 @@ public class NeighborMasher {
 			String taxonName = fsf.getTaxa()[0];
 			String[] parts = taxonName.split("_@_");
 			fw.write(parts[1]);
-			//				fw.write("\t");
-			//				fw.write(parts[0]);
-			//				fw.write("\t");
-			//				fw.write(ingroupFileName);
 			fw.write("\n");
 		}
 		fw.flush();
@@ -488,15 +483,15 @@ public class NeighborMasher {
 	private GenomeCandidate[] selectOutgroupCandidates(GenomeCandidate[] outgroupCandidates, double maximumIngroupDistance, double ingroupDistanceStdDev, int count) {
 		GenomeCandidate[] r = new GenomeCandidate[0];
 		Arrays.sort(outgroupCandidates);
-		double minimumRequiredDistance = maximumIngroupDistance + (ingroupDistanceStdDev*2);
-		System.out.println("minimum required outgroup distance: " + minimumRequiredDistance);
+		double minimumRequiredDistance = maximumIngroupDistance + (ingroupDistanceStdDev*0);
+		System.out.println("NeighborMasher.selectOutgroupCandidates() minimum required outgroup distance: " + minimumRequiredDistance);
 		HashMap<Double,HashSet<GenomeCandidate>> acceptableCandidatesByDistance = new HashMap<Double,HashSet<GenomeCandidate>>();
 		HashMap<Double,HashSet<GenomeCandidate>> tooNearCandidatesByDistance = new HashMap<Double,HashSet<GenomeCandidate>>();
 		HashSet<GenomeCandidate> tooFarCandidates = new HashSet<GenomeCandidate>();
+		int tooNearCandidateCount = 0;
 
 		for(int i = 0; i < outgroupCandidates.length && acceptableCandidatesByDistance.size() < count; i++) {
 			double distance = outgroupCandidates[i].getDistance();
-			//if(distance > minimumRequiredDistance && distance < 1.0) {
 			if(distance < 1.0) {
 				if(distance > minimumRequiredDistance) {
 					HashSet<GenomeCandidate> candidatesAtDistance = acceptableCandidatesByDistance.get(distance);
@@ -511,6 +506,7 @@ public class NeighborMasher {
 					if(candidatesAtDistance == null) {
 						candidatesAtDistance = new HashSet<GenomeCandidate>();
 						tooNearCandidatesByDistance.put(distance, candidatesAtDistance);
+						tooNearCandidateCount++;
 					}
 					candidatesAtDistance.add(outgroupCandidates[i]);
 
@@ -520,6 +516,7 @@ public class NeighborMasher {
 			}
 		}
 
+		System.out.println("tooNearCandidateCount: " + tooNearCandidateCount);
 		ArrayList<GenomeCandidate> selectedCandidates = new ArrayList<GenomeCandidate>();
 		Double[] distanceKeys = acceptableCandidatesByDistance.keySet().toArray(new Double[0]);
 		Arrays.sort(distanceKeys);
@@ -533,6 +530,7 @@ public class NeighborMasher {
 			HashSet<GenomeCandidate> candidatesAtDistance = acceptableCandidatesByDistance.get(distance);
 			for(GenomeCandidate candidate: candidatesAtDistance) {
 				selectedCandidates.add(candidate);
+				System.out.println(candidate.getGenomeFileName() + "\t" + candidate.getTaxonName() + "\t" + candidate.getDistance());
 				if(selectedCandidates.size() == count) {
 					break;
 				}
@@ -737,6 +735,53 @@ public class NeighborMasher {
 		System.out.println("<NeighborMasher.runOutgroupVsIngroupMash()");
 	}
 
+	private GenomeCandidate[] getMaxDistanceForEachOutgroupToIngroupSketch() {
+		GenomeCandidate[] r = null;
+		HashMap<String,Double> outgroupCandidateToMaxDistance = new HashMap<String,Double>();
+		String sketchFileName = getOutgroupSketchFileName();
+		if(sketchFileName == null) {
+			//create outgroup sketch file
+			createOutgroupSketchFile();
+			sketchFileName = getOutgroupSketchFileName();
+		}
+
+		String ingroupSketchFileName = getIngroupSketchFileName();
+		String mashCommand = getMashPath() + " dist -p " + getMashProcessorCount() + " -s " + getMashSketchSize() 
+				+ " " + ingroupSketchFileName + " " + sketchFileName;			
+
+		System.out.println("run mash on outgroup vs ingroup...");
+		System.out.println(mashCommand);
+		CommandResults results = ExecUtilities.exec(mashCommand);
+		String[] stdout = results.getStdout();
+
+		Pattern pattern = Pattern.compile("\\s+");
+		int queryIndex = 1;
+		int distanceFieldIndex = 2;
+		for(String line: stdout) {
+			String[] fields = pattern.split(line);
+			String queryGenome = fields[queryIndex];
+			double distance = Double.parseDouble(fields[distanceFieldIndex]);
+			Double maxDistance = outgroupCandidateToMaxDistance.get(queryGenome);
+			if(maxDistance == null || distance > maxDistance) {
+				outgroupCandidateToMaxDistance.put(queryGenome, distance);
+			}			
+		}
+
+		r = new GenomeCandidate[outgroupCandidateToMaxDistance.size()];
+		int index = 0;
+		for(String genomeFileName: outgroupCandidateToMaxDistance.keySet()) {
+			Double maxDistance = outgroupCandidateToMaxDistance.get(genomeFileName);
+			try {
+				r[index++] = new GenomeCandidate(genomeFileName, getTaxonName(genomeFileName), maxDistance);
+			} catch (IOException e) {
+				System.out.println("There was a problem trying to read the taxon name form the genome file, " + genomeFileName);
+				e.printStackTrace();
+			}
+		}
+
+		return r;
+	}
+
 	private GenomeCandidate[] getMinDistanceForEachOutgroupToIngroupSketch() {
 		GenomeCandidate[] r = null;
 		HashMap<String,Double> outgroupCandidateToMinDistance = new HashMap<String,Double>();
@@ -821,12 +866,12 @@ public class NeighborMasher {
 		return r;
 	}
 
-	private boolean isIngroupTreeOnly() {
-		return ingroupTreeOnly;
+	private boolean isIngroupOnly() {
+		return ingroupOnly;
 	}
 
 	private void setIngroupTreeOnly(boolean ingroupTreeOnly) {
-		this.ingroupTreeOnly = ingroupTreeOnly;
+		this.ingroupOnly = ingroupTreeOnly;
 	}
 
 	private String getOutgroupSketchFileName() {
